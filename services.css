@@ -1,0 +1,388 @@
+/* =========================
+   Service slides (stacked sections, normal page scroll)
+   ========================= */
+
+.section.service-slide {
+    position: relative;
+    overflow: hidden;
+    min-height: 100vh;
+    min-height: 100dvh;
+    background: #05070d;
+    padding: 0;
+    font-family: "Inter", "Segoe UI", system-ui, sans-serif;
+}
+
+.section.service-slide > .section-inner {
+    padding-left: clamp(20px, 5vw, 96px);
+    padding-right: clamp(20px, 5vw, 96px);
+    padding-bottom: 88px;
+}
+
+.section.service-slide::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background:
+        radial-gradient(ellipse 90% 60% at 15% 20%, rgba(59, 130, 246, 0.12), transparent 55%),
+        radial-gradient(ellipse 70% 50% at 85% 75%, rgba(168, 85, 247, 0.1), transparent 50%),
+        linear-gradient(180deg, #05070d 0%, #070a12 50%, #05070d 100%);
+}
+
+#ai-solutions.service-slide::before {
+    background:
+        radial-gradient(circle at 30% 40%, rgba(59, 130, 246, 0.08), transparent 45%),
+        radial-gradient(ellipse 90% 60% at 15% 20%, rgba(59, 130, 246, 0.12), transparent 55%),
+        radial-gradient(ellipse 70% 50% at 85% 75%, rgba(168, 85, 247, 0.1), transparent 50%),
+        linear-gradient(180deg, #05070d 0%, #070a12 50%, #05070d 100%);
+}
+
+#web-solutions.service-slide::before {
+    background:
+        radial-gradient(circle at 70% 35%, rgba(168, 85, 247, 0.07), transparent 42%),
+        radial-gradient(ellipse 90% 60% at 15% 20%, rgba(59, 130, 246, 0.12), transparent 55%),
+        radial-gradient(ellipse 70% 50% at 85% 75%, rgba(168, 85, 247, 0.1), transparent 50%),
+        linear-gradient(180deg, #05070d 0%, #070a12 50%, #05070d 100%);
+}
+
+#mobile-applications.service-slide::before {
+    background:
+        radial-gradient(circle at 25% 60%, rgba(59, 130, 246, 0.06), transparent 48%),
+        radial-gradient(ellipse 90% 60% at 15% 20%, rgba(59, 130, 246, 0.12), transparent 55%),
+        radial-gradient(ellipse 70% 50% at 85% 75%, rgba(168, 85, 247, 0.1), transparent 50%),
+        linear-gradient(180deg, #05070d 0%, #070a12 50%, #05070d 100%);
+}
+
+#software.service-slide::before {
+    background:
+        radial-gradient(circle at 75% 55%, rgba(168, 85, 247, 0.08), transparent 46%),
+        radial-gradient(ellipse 90% 60% at 15% 20%, rgba(59, 130, 246, 0.12), transparent 55%),
+        radial-gradient(ellipse 70% 50% at 85% 75%, rgba(168, 85, 247, 0.1), transparent 50%),
+        linear-gradient(180deg, #05070d 0%, #070a12 50%, #05070d 100%);
+}
+
+.section.service-slide .section-inner {
+    overflow: visible;
+}
+
+.service-layout {
+    position: relative;
+    z-index: 1;
+    width: min(1200px, 100%);
+    min-height: 0;
+    max-height: 100%;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: clamp(32px, 5vw, 72px);
+    overflow: visible;
+}
+
+.service-slide--reverse .service-layout {
+    flex-direction: row-reverse;
+}
+
+.service-robot-slot {
+    flex: 1 1 48%;
+    max-width: 900px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 720px;
+    overflow: visible;
+}
+
+/* Single #service-robot-container is moved between slides by services.js */
+.service-robot-slot #service-robot-container {
+    position: relative;
+    width: 100%;
+    max-width: 700px;
+    height: 900px;
+    max-height: min(900px, 78vh);
+    margin: 0 auto;
+    z-index: 2;
+}
+
+.service-robot-slot #service-robot-container canvas {
+    width: 100% !important;
+    height: 100% !important;
+    border-radius: 20px;
+}
+
+.service-copy {
+    flex: 1 1 48%;
+    max-width: 560px;
+}
+
+.service-copy h2 {
+    font-size: clamp(2rem, 4.2vw, 3.1rem);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+    color: #f1f5fb;
+    margin-bottom: 16px;
+}
+
+.service-copy h2 .gradient-text {
+    background: linear-gradient(105deg, #60a5fa, #a78bfa 55%, #c084fc);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+
+.service-lede {
+    color: #9fb0c8;
+    font-size: clamp(1rem, 1.35vw, 1.12rem);
+    line-height: 1.75;
+    margin-bottom: 22px;
+    max-width: 52ch;
+}
+
+.service-list {
+    list-style: none;
+    margin: 0 0 26px;
+    padding: 0;
+}
+
+.service-list li {
+    position: relative;
+    padding: 10px 0 10px 28px;
+    color: #c8d4e4;
+    font-size: 0.98rem;
+    line-height: 1.45;
+    border-bottom: 1px solid rgba(31, 42, 61, 0.55);
+}
+
+.service-list li:last-child {
+    border-bottom: none;
+}
+
+.service-list li::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #3b82f6, #a855f7);
+    box-shadow: 0 0 12px rgba(59, 130, 246, 0.45);
+}
+
+.service-list-link {
+    color: inherit;
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+.service-list-link:hover,
+.service-list-link:focus-visible {
+    color: #fff;
+    border-bottom-color: rgba(96, 165, 250, 0.55);
+    outline: none;
+}
+
+.service-cta {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 6px;
+    padding: 14px 28px;
+    border-radius: 999px;
+    font-weight: 800;
+    font-size: 0.95rem;
+    color: #fff;
+    text-decoration: none;
+    background: linear-gradient(92deg, #3b82f6, #7c3aed 50%, #a855f7);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    box-shadow:
+        0 20px 50px rgba(59, 130, 246, 0.25),
+        0 0 0 1px rgba(168, 85, 247, 0.12) inset;
+    transition: transform 0.25s ease, box-shadow 0.25s ease, filter 0.25s ease;
+}
+
+.service-cta:hover {
+    transform: translateY(-2px) scale(1.03);
+    filter: brightness(1.08);
+    box-shadow:
+        0 28px 70px rgba(168, 85, 247, 0.35),
+        0 0 40px rgba(59, 130, 246, 0.2);
+}
+
+/* Entrance (tied to .is-visible from JS) */
+.service-copy,
+.service-robot-slot {
+    opacity: 0;
+    transform: translateY(22px);
+    transition:
+        opacity 0.75s cubic-bezier(0.22, 1, 0.36, 1),
+        transform 0.75s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.service-slide.is-visible .service-copy,
+.service-slide.is-visible .service-robot-slot {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.service-slide.is-visible .service-robot-slot {
+    transition-delay: 0.08s;
+}
+
+.service-slide.is-visible .service-robot-slot #service-robot-container {
+    animation: serviceRobotFloat 5.5s ease-in-out infinite;
+}
+
+@keyframes serviceRobotFloat {
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-12px);
+    }
+}
+
+.client-showcase-slide {
+    position: relative;
+    overflow: hidden;
+    background:
+        radial-gradient(circle at 20% 15%, rgba(59, 130, 246, 0.14), transparent 40%),
+        radial-gradient(circle at 80% 80%, rgba(139, 92, 246, 0.12), transparent 42%),
+        #05070d;
+}
+
+.client-showcase-wrap {
+    width: min(1200px, 100%);
+    padding: 0 clamp(20px, 4vw, 56px);
+    text-align: center;
+}
+
+.client-showcase-wrap h2 {
+    margin: 0;
+    font-size: clamp(1.7rem, 3.2vw, 2.6rem);
+}
+
+.client-showcase-subtitle {
+    margin: 10px auto 18px;
+    color: #a8b7ce;
+    max-width: 68ch;
+}
+
+.client-logo-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+    align-items: stretch;
+}
+
+.client-logo-empty {
+    grid-column: 1 / -1;
+    color: #a8b7ce;
+    border: 1px dashed rgba(148, 163, 184, 0.4);
+    border-radius: 16px;
+    padding: 20px;
+}
+
+.client-logo-card {
+    text-decoration: none;
+    perspective: 900px;
+}
+
+.client-logo-card-inner {
+    height: 140px;
+    border-radius: 16px;
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    background: linear-gradient(160deg, rgba(16, 24, 39, 0.95), rgba(8, 13, 24, 0.98));
+    box-shadow:
+        0 18px 36px rgba(0, 0, 0, 0.36),
+        inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    transform-style: preserve-3d;
+    transition: transform 260ms ease, box-shadow 260ms ease, border-color 260ms ease;
+    display: grid;
+    place-items: center;
+    padding: 14px;
+}
+
+.client-logo-card:hover .client-logo-card-inner {
+    transform: rotateX(8deg) rotateY(-8deg) translateY(-6px) scale(1.02);
+    border-color: rgba(139, 92, 246, 0.55);
+    box-shadow:
+        0 26px 48px rgba(0, 0, 0, 0.46),
+        0 10px 30px rgba(59, 130, 246, 0.24);
+}
+
+.client-logo-card img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.45));
+}
+
+@media (max-width: 900px) {
+    .section.service-slide > .section-inner {
+        padding-left: 20px;
+        padding-right: 20px;
+        padding-bottom: 48px;
+    }
+
+    .service-layout,
+    .service-slide--reverse .service-layout {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .service-copy {
+        max-width: 100%;
+        order: 2;
+    }
+
+    .service-robot-slot {
+        order: 1;
+        max-width: 100%;
+        min-height: 560px;
+    }
+
+    .service-robot-slot #service-robot-container {
+        max-width: 100%;
+        height: min(720px, 58vh);
+        max-height: min(720px, 58vh);
+    }
+
+    .service-lede {
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .service-list li {
+        text-align: left;
+        padding-left: 28px;
+    }
+
+    .service-list {
+        max-width: 420px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .service-slide.is-visible .service-robot-slot #service-robot-container {
+        animation: none;
+    }
+
+    .service-copy,
+    .service-robot-slot {
+        opacity: 1;
+        transform: none;
+        transition: none;
+    }
+
+    html {
+        scroll-behavior: auto;
+    }
+}
