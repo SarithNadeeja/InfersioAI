@@ -15,6 +15,7 @@ declare(strict_types=1);
 
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="ios-app-development.css">
+    <link rel="stylesheet" href="premium-bw-mixed.css">
 </head>
 <body id="page-top" class="ai-iosd-page">
     <header class="site-header">
@@ -65,8 +66,8 @@ declare(strict_types=1);
                             <li><a href="cloud-software.php">Cloud-Based Software Solutions</a></li>
                         </ul>
                     </li>
-                    <li><a href="index.php#about">About Us</a></li>
-                    <li><a href="index.php#contact">Contact</a></li>
+                    <li><a href="about.php">About Us</a></li>
+                    <li><a href="contact.php">Contact</a></li>
                 </ul>
             </nav>
         </div>
@@ -189,7 +190,7 @@ declare(strict_types=1);
                     Tell us about your product and users—we’ll shape an iOS roadmap that fits your timeline and App Store goals.
                 </p>
                 <div class="iosd-cta-actions">
-                    <a class="iosd-btn-outline" href="index.php#contact">Contact Us</a>
+                    <a class="iosd-btn-outline" href="contact.php">Contact Us</a>
                     <a class="iosd-btn-outline iosd-btn-invert" href="mailto:sales@infersioai.com?subject=iOS%20App%20Development">Start a Project</a>
                 </div>
             </div>

@@ -15,6 +15,7 @@ declare(strict_types=1);
 
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="ui-ux-design.css">
+    <link rel="stylesheet" href="premium-bw-mixed.css">
 </head>
 <body id="page-top" class="ai-uxd-page">
     <header class="site-header">
@@ -65,8 +66,8 @@ declare(strict_types=1);
                             <li><a href="cloud-software.php">Cloud-Based Software Solutions</a></li>
                         </ul>
                     </li>
-                    <li><a href="index.php#about">About Us</a></li>
-                    <li><a href="index.php#contact">Contact</a></li>
+                    <li><a href="about.php">About Us</a></li>
+                    <li><a href="contact.php">Contact</a></li>
                 </ul>
             </nav>
         </div>
@@ -189,7 +190,7 @@ declare(strict_types=1);
                     Share your product and audience—we’ll map a design path that feels clear, fast, and on-brand.
                 </p>
                 <div class="uxd-cta-actions">
-                    <a class="uxd-btn-outline" href="index.php#contact">Contact Us</a>
+                    <a class="uxd-btn-outline" href="contact.php">Contact Us</a>
                     <a class="uxd-btn-outline uxd-btn-invert" href="mailto:sales@infersioai.com?subject=UI%2FUX%20Design%20%26%20Optimization">Start a Project</a>
                 </div>
             </div>

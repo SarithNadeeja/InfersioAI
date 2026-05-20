@@ -15,6 +15,7 @@ declare(strict_types=1);
 
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="ai-automation.css">
+    <link rel="stylesheet" href="premium-bw-mixed.css">
 </head>
 <body id="page-top" class="ai-automation-page">
     <header class="site-header">
@@ -65,8 +66,8 @@ declare(strict_types=1);
                             <li><a href="cloud-software.php">Cloud-Based Software Solutions</a></li>
                         </ul>
                     </li>
-                    <li><a href="index.php#about">About Us</a></li>
-                    <li><a href="index.php#contact">Contact</a></li>
+                    <li><a href="about.php">About Us</a></li>
+                    <li><a href="contact.php">Contact</a></li>
                 </ul>
             </nav>
         </div>
@@ -202,7 +203,7 @@ declare(strict_types=1);
                     Let us design systems that simplify your operations and maximize efficiency.
                 </p>
                 <div class="automation-cta-actions">
-                    <a class="automation-btn-outline" href="index.php#contact">Contact Us</a>
+                    <a class="automation-btn-outline" href="contact.php">Contact Us</a>
                     <a class="automation-btn-outline automation-btn-invert" href="mailto:sales@infersioai.com?subject=AI%20Automation%20Consultation">Book Consultation</a>
                 </div>
             </div>

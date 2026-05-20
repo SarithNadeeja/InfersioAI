@@ -11,7 +11,7 @@ body.ai-aad-page {
     min-height: 100%;
     overflow-x: hidden;
     font-family: "Inter", system-ui, -apple-system, Segoe UI, sans-serif;
-    background: #000;
+    background: #05070d;
     color: rgba(255, 255, 255, 0.9);
     -webkit-font-smoothing: antialiased;
 }
@@ -185,7 +185,7 @@ body.ai-aad-page {
 /* --- About --- */
 .aad-about {
     padding: clamp(72px, 11vh, 112px) 0;
-    background: #000;
+    background: #05070d;
     border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
@@ -240,7 +240,7 @@ body.ai-aad-page {
 /* --- Services --- */
 .aad-services {
     padding: clamp(72px, 11vh, 112px) 0 clamp(56px, 9vh, 88px);
-    background: #000;
+    background: #05070d;
 }
 
 .aad-services-inner {
@@ -280,7 +280,7 @@ body.ai-aad-page {
 }
 
 .aad-card {
-    background: #0b0b0b;
+    background: #0b0f19;
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 14px;
     padding: 26px 24px 28px;
@@ -365,7 +365,7 @@ body.ai-aad-page {
     align-items: flex-start;
     gap: 14px;
     padding: 18px 20px;
-    background: #0b0b0b;
+    background: #0b0f19;
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 14px;
     transition: border-color 0.45s ease, box-shadow 0.45s ease, transform 0.45s ease;

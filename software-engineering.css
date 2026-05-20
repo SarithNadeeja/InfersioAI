@@ -11,7 +11,7 @@ body.ai-se-page {
     min-height: 100%;
     overflow-x: hidden;
     font-family: "Inter", system-ui, -apple-system, Segoe UI, sans-serif;
-    background: #000;
+    background: #05070d;
     color: rgba(255, 255, 255, 0.9);
     -webkit-font-smoothing: antialiased;
 }
@@ -70,7 +70,7 @@ body.ai-se-page {
     overflow: hidden;
     background:
         radial-gradient(ellipse 55% 48% at 78% 10%, rgba(255, 255, 255, 0.06), transparent 55%),
-        linear-gradient(165deg, #000 0%, #0a0a0a 45%, #111 100%);
+        linear-gradient(165deg, #05070d 0%, #0b0f19 45%, #0a0e18 100%);
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
@@ -185,7 +185,7 @@ body.ai-se-page {
 /* --- About --- */
 .se-about {
     padding: clamp(72px, 11vh, 112px) 0;
-    background: #000;
+    background: #05070d;
     border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
@@ -237,128 +237,12 @@ body.ai-se-page {
     max-width: 38rem;
 }
 
-/* --- Services --- */
-.se-services {
-    padding: clamp(72px, 11vh, 112px) 0 clamp(56px, 9vh, 88px);
-    background: #000;
-}
-
-.se-services-inner {
-    width: min(1120px, 92%);
-    margin: 0 auto;
-}
-
-.se-services-title {
-    font-family: "Sora", "Inter", system-ui, sans-serif;
-    font-weight: 600;
-    font-size: clamp(1.45rem, 2.4vw, 2rem);
-    letter-spacing: -0.02em;
-    color: #fff;
-    margin-bottom: 10px;
-}
-
-.se-services-intro {
-    font-size: 0.98rem;
-    color: rgba(255, 255, 255, 0.45);
-    max-width: 46rem;
-    margin-bottom: 36px;
-    line-height: 1.6;
-}
-
-.se-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 22px;
-}
-
-@media (min-width: 641px) {
-    .se-grid .se-card:last-child:nth-child(odd) {
-        grid-column: 1 / -1;
-        max-width: calc(50% - 11px);
-        justify-self: center;
-    }
-}
-
-.se-card[id] {
-    scroll-margin-top: calc(var(--site-header-h, 72px) + 16px);
-}
-
-.se-card {
-    display: flex;
-    flex-direction: column;
-    background: #0b0b0b;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 14px;
-    padding: 26px 24px 28px;
-    transition:
-        transform 0.55s cubic-bezier(0.22, 1, 0.36, 1),
-        border-color 0.45s ease,
-        box-shadow 0.55s ease;
-}
-
-.se-card:hover {
-    transform: translateY(-6px);
-    border-color: rgba(255, 255, 255, 0.28);
-    box-shadow:
-        0 0 0 1px rgba(255, 255, 255, 0.06),
-        0 22px 56px rgba(0, 0, 0, 0.55);
-}
-
-.se-card-title {
-    font-family: "Sora", "Inter", system-ui, sans-serif;
-    font-weight: 600;
-    font-size: 1.1rem;
-    color: #fff;
-    margin-bottom: 10px;
-    letter-spacing: -0.02em;
-}
-
-.se-card-desc {
-    font-size: 0.94rem;
-    line-height: 1.6;
-    color: rgba(255, 255, 255, 0.52);
-    margin: 0 0 18px;
-}
-
-.se-card-learn-more {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    margin-top: auto;
-    padding-top: 4px;
-    font-size: 0.82rem;
-    font-weight: 600;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    text-decoration: none;
-    color: rgba(255, 255, 255, 0.72);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.28);
-    transition: color 0.35s ease, border-color 0.35s ease, letter-spacing 0.35s ease;
-}
-
-.se-card-learn-more:hover,
-.se-card-learn-more:focus-visible {
-    color: #fff;
-    border-bottom-color: rgba(255, 255, 255, 0.65);
-    letter-spacing: 0.08em;
-    outline: none;
-}
-
-.se-card-learn-more::after {
-    content: "→";
-    font-size: 0.95em;
-    transition: transform 0.35s ease;
-}
-
-.se-card-learn-more:hover::after,
-.se-card-learn-more:focus-visible::after {
-    transform: translateX(4px);
-}
+/* What we build: .ai-services, .ai-grid, .ai-card — from ai-solutions.css */
 
 /* --- Features --- */
 .se-features {
     padding: clamp(64px, 10vh, 100px) 0 clamp(72px, 11vh, 104px);
-    background: linear-gradient(180deg, #000 0%, #0a0a0a 100%);
+    background: linear-gradient(180deg, #05070d 0%, #0b0f19 100%);
     border-top: 1px solid rgba(255, 255, 255, 0.06);
     border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
@@ -412,7 +296,7 @@ body.ai-se-page {
     align-items: flex-start;
     gap: 14px;
     padding: 18px 20px;
-    background: #0b0b0b;
+    background: #0b0f19;
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 14px;
     transition: border-color 0.45s ease, box-shadow 0.45s ease, transform 0.45s ease;
@@ -441,12 +325,13 @@ body.ai-se-page {
     font-weight: 500;
 }
 
+/* Match ai-solutions.css scroll-reveal timing */
 [data-reveal] {
     opacity: 0;
-    transform: translateY(26px);
+    transform: translateY(28px);
     transition:
-        opacity 0.72s cubic-bezier(0.22, 1, 0.36, 1),
-        transform 0.72s cubic-bezier(0.22, 1, 0.36, 1);
+        opacity 0.75s cubic-bezier(0.22, 1, 0.36, 1),
+        transform 0.75s cubic-bezier(0.22, 1, 0.36, 1);
     transition-delay: var(--reveal-delay, 0ms);
 }
 
@@ -460,7 +345,7 @@ body.ai-se-page {
     padding: clamp(72px, 11vh, 112px) 0 clamp(96px, 12vh, 128px);
     background:
         radial-gradient(ellipse 55% 40% at 50% 0%, rgba(255, 255, 255, 0.05), transparent 58%),
-        linear-gradient(180deg, #000, #0a0a0a);
+        linear-gradient(180deg, #05070d, #0b0f19);
 }
 
 .se-cta-inner {
@@ -578,10 +463,6 @@ body.ai-se-page {
         margin-right: auto;
     }
 
-    .se-grid {
-        grid-template-columns: 1fr;
-    }
-
     .se-features-grid {
         grid-template-columns: 1fr;
     }
@@ -610,13 +491,18 @@ body.ai-se-page {
         transition: none !important;
     }
 
-    .se-card,
+    .ai-card,
+    .ai-card-media img,
     .se-feature-item {
         transition: none !important;
     }
 
-    .se-card:hover,
+    .ai-card:hover,
     .se-feature-item:hover {
+        transform: none;
+    }
+
+    .ai-card:hover .ai-card-media img {
         transform: none;
     }
 }
@@ -627,34 +513,23 @@ body.ai-se-page {
 
 .ai-se-page .se-hero-lede,
 .ai-se-page .se-about-text,
-.ai-se-page .se-services-intro,
-.ai-se-page .se-card-desc,
+.ai-se-page .ai-services .ai-card-desc,
 .ai-se-page .se-features-sub {
     line-height: 1.8;
 }
 
 .ai-se-page .se-about-title,
-.ai-se-page .se-services-title,
+.ai-se-page .ai-services .ai-section-title,
 .ai-se-page .se-features-title {
     letter-spacing: -0.028em;
 }
 
-.ai-se-page .se-services-inner,
 .ai-se-page .se-about-inner {
     width: min(1120px, 90%);
 }
 
 .ai-se-page .se-features-inner {
     width: min(880px, 90%);
-}
-
-.ai-se-page .se-card {
-    border-color: rgba(255, 255, 255, 0.08);
-    background: rgba(12, 12, 12, 0.96);
-}
-
-.ai-se-page .se-card:hover {
-    box-shadow: 0 28px 64px rgba(0, 0, 0, 0.5);
 }
 
 .ai-se-page .se-feature-item {

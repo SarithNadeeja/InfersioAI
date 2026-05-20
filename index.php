@@ -100,8 +100,8 @@ try {
                             <li><a href="cloud-software.php">Cloud-Based Software Solutions</a></li>
                         </ul>
                     </li>
-                    <li><a href="#about">About Us</a></li>
-                    <li><a href="#contact">Contact</a></li>
+                    <li><a href="about.php">About Us</a></li>
+                    <li><a href="contact.php">Contact</a></li>
                 </ul>
             </nav>
         </div>
@@ -155,30 +155,7 @@ try {
                         </div>
                     </div>
 
-                    <a class="cta-btn hero-cta" href="#contact">Contact Us</a>
-
-                    <div class="home-live-counter" aria-label="Live business counters">
-                        <div class="home-counter-item">
-                            <span class="home-counter-value"><?= (int) $homeCounters["ai-solutions"] ?></span>
-                            <span class="home-counter-label">AI Solutions</span>
-                        </div>
-                        <div class="home-counter-item">
-                            <span class="home-counter-value"><?= (int) $homeCounters["web-solutions"] ?></span>
-                            <span class="home-counter-label">Web Solutions</span>
-                        </div>
-                        <div class="home-counter-item">
-                            <span class="home-counter-value"><?= (int) $homeCounters["mobile-applications"] ?></span>
-                            <span class="home-counter-label">Mobile Applications</span>
-                        </div>
-                        <div class="home-counter-item">
-                            <span class="home-counter-value"><?= (int) $homeCounters["software-development"] ?></span>
-                            <span class="home-counter-label">Software Development</span>
-                        </div>
-                        <div class="home-counter-item">
-                            <span class="home-counter-value">$<?= number_format((float) $homeCounters["today_revenue"], 2) ?></span>
-                            <span class="home-counter-label">Today's Recognized Revenue</span>
-                        </div>
-                    </div>
+                    <a class="cta-btn hero-cta" href="contact.php">Contact Us</a>
                 </div>
             </div>
             </div>
@@ -205,7 +182,7 @@ try {
                                 <li>Machine Learning Solutions</li>
                                 <li>AI Integration for Web &amp; Apps</li>
                             </ul>
-                            <a class="service-cta" href="#contact">Get More Details</a>
+                            <a class="service-cta" href="contact.php">Get More Details</a>
                         </div>
                     </div>
             </div>
@@ -227,7 +204,7 @@ try {
                                 <li>E-Commerce Platforms</li>
                                 <li>UI/UX Design</li>
                             </ul>
-                            <a class="service-cta" href="#contact">Get More Details</a>
+                            <a class="service-cta" href="contact.php">Get More Details</a>
                         </div>
                     </div>
             </div>
@@ -249,7 +226,7 @@ try {
                                 <li>Cross-Platform Apps</li>
                                 <li>App UI/UX</li>
                             </ul>
-                            <a class="service-cta" href="#contact">Get More Details</a>
+                            <a class="service-cta" href="contact.php">Get More Details</a>
                         </div>
                     </div>
             </div>
@@ -271,7 +248,7 @@ try {
                                 <li>API Development</li>
                                 <li>System Automation</li>
                             </ul>
-                            <a class="service-cta" href="#contact">Get More Details</a>
+                            <a class="service-cta" href="contact.php">Get More Details</a>
                         </div>
                     </div>
             </div>
@@ -280,8 +257,34 @@ try {
         <section id="client-showcase" class="section client-showcase-slide" aria-label="Client Logos">
             <div class="section-inner">
                 <div class="client-showcase-wrap">
-                    <h2>Trusted by Our <span class="gradient-text">Clients</span></h2>
-                    <p class="client-showcase-subtitle">Logos are managed from Admin Panel and appear here automatically.</p>
+                    <div class="client-showcase-header">
+                        <div class="client-showcase-title-area">
+                            <h2>Trusted by Our <span class="gradient-text">Clients</span></h2>
+                            <p class="client-showcase-subtitle">Logos are managed from Admin Panel and appear here automatically.</p>
+                        </div>
+                        <div class="client-showcase-stats">
+                            <div class="client-stat-item">
+                                <span class="client-stat-value"><?= (int) $homeCounters["ai-solutions"] ?></span>
+                                <span class="client-stat-label">AI Solutions</span>
+                            </div>
+                            <div class="client-stat-item">
+                                <span class="client-stat-value"><?= (int) $homeCounters["web-solutions"] ?></span>
+                                <span class="client-stat-label">Web Solutions</span>
+                            </div>
+                            <div class="client-stat-item">
+                                <span class="client-stat-value"><?= (int) $homeCounters["mobile-applications"] ?></span>
+                                <span class="client-stat-label">Mobile Apps</span>
+                            </div>
+                            <div class="client-stat-item">
+                                <span class="client-stat-value"><?= (int) $homeCounters["software-development"] ?></span>
+                                <span class="client-stat-label">Software</span>
+                            </div>
+                            <div class="client-stat-item highlight-stat">
+                                <span class="client-stat-value">$<?= number_format((float) $homeCounters["today_revenue"], 2) ?></span>
+                                <span class="client-stat-label">Today's Revenue</span>
+                            </div>
+                        </div>
+                    </div>
                     <div class="client-logo-grid">
                         <?php if (!$clientLogos): ?>
                             <div class="client-logo-empty">No client logos yet. Add clients from the admin panel.</div>
@@ -315,7 +318,7 @@ try {
                     <p class="premium-cta-description">
                         Partner with InfersioAI to design and develop intelligent systems that scale with your business.
                     </p>
-                    <a class="premium-cta-btn" href="#contact">Start Your Project</a>
+                    <a class="premium-cta-btn" href="contact.php">Start Your Project</a>
                 </div>
             </div>
             </div>

@@ -11,7 +11,7 @@ body.ai-cpa-page {
     min-height: 100%;
     overflow-x: hidden;
     font-family: "Inter", system-ui, -apple-system, Segoe UI, sans-serif;
-    background: #03040f;
+    background: #05070d;
     color: rgba(255, 255, 255, 0.9);
     -webkit-font-smoothing: antialiased;
 }
@@ -209,7 +209,7 @@ body.ai-cpa-page {
 /* --- About --- */
 .cpa-about {
     padding: clamp(72px, 11vh, 112px) 0;
-    background: #03040f;
+    background: #05070d;
     border-bottom: 1px solid rgba(56, 189, 248, 0.08);
 }
 
@@ -264,7 +264,7 @@ body.ai-cpa-page {
 /* --- Services --- */
 .cpa-services {
     padding: clamp(72px, 11vh, 112px) 0 clamp(56px, 9vh, 88px);
-    background: #03040f;
+    background: #05070d;
 }
 
 .cpa-services-inner {

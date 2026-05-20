@@ -15,6 +15,7 @@ declare(strict_types=1);
 
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="ai-chatbots.css">
+    <link rel="stylesheet" href="premium-bw-mixed.css">
 </head>
 <body id="page-top" class="ai-chatbots-page">
     <header class="site-header">
@@ -65,8 +66,8 @@ declare(strict_types=1);
                             <li><a href="cloud-software.php">Cloud-Based Software Solutions</a></li>
                         </ul>
                     </li>
-                    <li><a href="index.php#about">About Us</a></li>
-                    <li><a href="index.php#contact">Contact</a></li>
+                    <li><a href="about.php">About Us</a></li>
+                    <li><a href="contact.php">Contact</a></li>
                 </ul>
             </nav>
         </div>
@@ -206,7 +207,7 @@ declare(strict_types=1);
                     Let’s build a chatbot tailored to your business needs.
                 </p>
                 <div class="chatbots-cta-actions">
-                    <a class="chatbots-btn-outline" href="index.php#contact">Contact Us</a>
+                    <a class="chatbots-btn-outline" href="contact.php">Contact Us</a>
                     <a class="chatbots-btn-outline chatbots-btn-invert" href="mailto:sales@infersioai.com?subject=AI%20Chatbot%20Consultation">Book Consultation</a>
                 </div>
             </div>

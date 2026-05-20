@@ -15,6 +15,7 @@ declare(strict_types=1);
 
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="api-development.css">
+    <link rel="stylesheet" href="premium-bw-mixed.css">
 </head>
 <body id="page-top" class="ai-apid-page">
     <header class="site-header">
@@ -65,8 +66,8 @@ declare(strict_types=1);
                             <li><a href="cloud-software.php">Cloud-Based Software Solutions</a></li>
                         </ul>
                     </li>
-                    <li><a href="index.php#about">About Us</a></li>
-                    <li><a href="index.php#contact">Contact</a></li>
+                    <li><a href="about.php">About Us</a></li>
+                    <li><a href="contact.php">Contact</a></li>
                 </ul>
             </nav>
         </div>
@@ -188,7 +189,7 @@ declare(strict_types=1);
                     Share your current stack and integration goals—we’ll propose contracts, tooling, and a delivery sequence that de-risks cutover.
                 </p>
                 <div class="apid-cta-actions">
-                    <a class="apid-btn-outline" href="index.php#contact">Contact Us</a>
+                    <a class="apid-btn-outline" href="contact.php">Contact Us</a>
                     <a class="apid-btn-outline apid-btn-invert" href="mailto:sales@infersioai.com?subject=API%20Development%20%26%20Integration">Start a Project</a>
                 </div>
             </div>

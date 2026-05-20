@@ -74,6 +74,19 @@ function bootstrap_database(): void
     $pdo->exec("ALTER TABLE service_projects ADD COLUMN IF NOT EXISTS category VARCHAR(140) NOT NULL DEFAULT ''");
     $pdo->exec("ALTER TABLE service_projects ADD COLUMN IF NOT EXISTS simple_description TEXT NOT NULL DEFAULT ''");
 
+    $pdo->exec(
+        "CREATE TABLE IF NOT EXISTS team_members (
+            id SERIAL PRIMARY KEY,
+            name VARCHAR(120) NOT NULL,
+            role VARCHAR(120) NOT NULL,
+            image_url TEXT NOT NULL,
+            profile_link TEXT NOT NULL,
+            sort_order INT NOT NULL DEFAULT 0,
+            created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+            updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+        )"
+    );
+
     $stmt = $pdo->prepare("SELECT id FROM admin_users WHERE username = :username LIMIT 1");
     $stmt->execute(["username" => "admin"]);
     if (!$stmt->fetch()) {
@@ -98,6 +111,23 @@ function public_clients(): array
             "SELECT id, company_name, company_website, logo_path
              FROM clients
              ORDER BY created_at DESC"
+        );
+        return $stmt->fetchAll();
+    } catch (Throwable $e) {
+        return [];
+    }
+}
+
+/** @return list<array{name: string, role: string, image_url: string, profile_link: string}> */
+function public_team_members(): array
+{
+    try {
+        bootstrap_database();
+        $pdo = db();
+        $stmt = $pdo->query(
+            "SELECT name, role, image_url, profile_link
+             FROM team_members
+             ORDER BY sort_order ASC, id ASC"
         );
         return $stmt->fetchAll();
     } catch (Throwable $e) {

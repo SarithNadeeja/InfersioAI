@@ -15,6 +15,7 @@ declare(strict_types=1);
 
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="web-solutions.css">
+    <link rel="stylesheet" href="premium-bw-mixed.css">
 </head>
 <body id="page-top" class="ai-web-solutions-page">
     <header class="site-header">
@@ -65,8 +66,8 @@ declare(strict_types=1);
                             <li><a href="cloud-software.php">Cloud-Based Software Solutions</a></li>
                         </ul>
                     </li>
-                    <li><a href="index.php#about">About Us</a></li>
-                    <li><a href="index.php#contact">Contact</a></li>
+                    <li><a href="about.php">About Us</a></li>
+                    <li><a href="contact.php">Contact</a></li>
                 </ul>
             </nav>
         </div>
@@ -229,7 +230,7 @@ declare(strict_types=1);
                     Let us create a web solution that represents your business and drives real results.
                 </p>
                 <div class="ws-cta-actions">
-                    <a class="ws-btn-outline" href="index.php#contact">Contact Us</a>
+                    <a class="ws-btn-outline" href="contact.php">Contact Us</a>
                     <a class="ws-btn-outline ws-btn-invert" href="mailto:sales@infersioai.com?subject=Web%20Solutions%20Project">Start Your Project</a>
                 </div>
             </div>

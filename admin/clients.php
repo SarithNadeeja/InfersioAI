@@ -174,6 +174,7 @@ if (!empty($_GET["ok"]) && isset($okMap[$_GET["ok"]])) {
             <div class="brand">InfersioAI Admin</div>
             <a class="nav-link" href="index.php">Dashboard</a>
             <a class="nav-link active" href="clients.php">Client Manager</a>
+            <a class="nav-link" href="team.php">Team (About)</a>
             <a class="nav-link" href="projects.php?service=ai-solutions">AI Solutions</a>
             <a class="nav-link" href="projects.php?service=web-solutions">Web Solutions</a>
             <a class="nav-link" href="projects.php?service=mobile-applications">Mobile Applications</a>

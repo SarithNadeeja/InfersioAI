@@ -15,6 +15,7 @@ declare(strict_types=1);
 
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="custom-website-development.css">
+    <link rel="stylesheet" href="premium-bw-mixed.css">
 </head>
 <body id="page-top" class="ai-cwd-page">
     <header class="site-header">
@@ -65,8 +66,8 @@ declare(strict_types=1);
                             <li><a href="cloud-software.php">Cloud-Based Software Solutions</a></li>
                         </ul>
                     </li>
-                    <li><a href="index.php#about">About Us</a></li>
-                    <li><a href="index.php#contact">Contact</a></li>
+                    <li><a href="about.php">About Us</a></li>
+                    <li><a href="contact.php">Contact</a></li>
                 </ul>
             </nav>
         </div>
@@ -189,7 +190,7 @@ declare(strict_types=1);
                     Tell us about your brand and goals—we’ll shape a site that performs and scales with you.
                 </p>
                 <div class="cwd-cta-actions">
-                    <a class="cwd-btn-outline" href="index.php#contact">Contact Us</a>
+                    <a class="cwd-btn-outline" href="contact.php">Contact Us</a>
                     <a class="cwd-btn-outline cwd-btn-invert" href="mailto:sales@infersioai.com?subject=Custom%20Website%20Development">Start a Project</a>
                 </div>
             </div>

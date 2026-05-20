@@ -15,6 +15,7 @@ declare(strict_types=1);
 
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="ai-content-automation.css">
+    <link rel="stylesheet" href="premium-bw-mixed.css">
 </head>
 <body id="page-top" class="ai-content-auto-page">
     <header class="site-header">
@@ -65,8 +66,8 @@ declare(strict_types=1);
                             <li><a href="cloud-software.php">Cloud-Based Software Solutions</a></li>
                         </ul>
                     </li>
-                    <li><a href="index.php#about">About Us</a></li>
-                    <li><a href="index.php#contact">Contact</a></li>
+                    <li><a href="about.php">About Us</a></li>
+                    <li><a href="contact.php">Contact</a></li>
                 </ul>
             </nav>
         </div>
@@ -202,7 +203,7 @@ declare(strict_types=1);
                     Let us build a content system that keeps your brand active and visible.
                 </p>
                 <div class="content-auto-cta-actions">
-                    <a class="content-auto-btn-outline" href="index.php#contact">Contact Us</a>
+                    <a class="content-auto-btn-outline" href="contact.php">Contact Us</a>
                     <a class="content-auto-btn-outline content-auto-btn-invert" href="mailto:sales@infersioai.com?subject=AI%20Content%20Automation%20Project">Start a Project</a>
                 </div>
             </div>

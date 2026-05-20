@@ -15,6 +15,7 @@ declare(strict_types=1);
 
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="ai-agents.css">
+    <link rel="stylesheet" href="premium-bw-mixed.css">
 </head>
 <body id="page-top" class="ai-agents-page">
     <header class="site-header">
@@ -65,8 +66,8 @@ declare(strict_types=1);
                             <li><a href="cloud-software.php">Cloud-Based Software Solutions</a></li>
                         </ul>
                     </li>
-                    <li><a href="index.php#about">About Us</a></li>
-                    <li><a href="index.php#contact">Contact</a></li>
+                    <li><a href="about.php">About Us</a></li>
+                    <li><a href="contact.php">Contact</a></li>
                 </ul>
             </nav>
         </div>
@@ -166,7 +167,7 @@ declare(strict_types=1);
                     Let us design and implement AI systems tailored to your business operations.
                 </p>
                 <div class="agents-cta-actions">
-                    <a class="agents-btn-outline" href="index.php#contact">Contact Us</a>
+                    <a class="agents-btn-outline" href="contact.php">Contact Us</a>
                     <a class="agents-btn-outline agents-btn-invert" href="mailto:sales@infersioai.com?subject=AI%20Agents%20Consultation">Book Consultation</a>
                 </div>
             </div>

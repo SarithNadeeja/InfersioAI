@@ -60,7 +60,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const slot = bestSlide && bestSlide.querySelector(".service-robot-slot");
 
         if (slot && bestArea >= minArea) {
-            if (robotHost.parentElement !== slot) {
+            if (robotHost.parentElement !== slot && !robotHost.classList.contains("chatbot-mode")) {
                 slot.appendChild(robotHost);
             }
             robotHost.removeAttribute("hidden");
@@ -79,7 +79,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    const serviceCtas = document.querySelectorAll('.service-slide .service-cta[href="#contact"]');
+    const serviceCtas = document.querySelectorAll('.service-slide .service-cta[href="contact.php"]');
     serviceCtas.forEach((btn) => {
         const slide = btn.closest("section.service-slide");
         if (!slide) return;

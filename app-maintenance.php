@@ -15,6 +15,7 @@ declare(strict_types=1);
 
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="app-maintenance.css">
+    <link rel="stylesheet" href="premium-bw-mixed.css">
 </head>
 <body id="page-top" class="ai-amm-page">
     <header class="site-header">
@@ -65,8 +66,8 @@ declare(strict_types=1);
                             <li><a href="cloud-software.php">Cloud-Based Software Solutions</a></li>
                         </ul>
                     </li>
-                    <li><a href="index.php#about">About Us</a></li>
-                    <li><a href="index.php#contact">Contact</a></li>
+                    <li><a href="about.php">About Us</a></li>
+                    <li><a href="contact.php">Contact</a></li>
                 </ul>
             </nav>
         </div>
@@ -189,7 +190,7 @@ declare(strict_types=1);
                     Tell us about your app and release channels—we’ll propose a maintenance plan that fits your risk profile.
                 </p>
                 <div class="amm-cta-actions">
-                    <a class="amm-btn-outline" href="index.php#contact">Contact Us</a>
+                    <a class="amm-btn-outline" href="contact.php">Contact Us</a>
                     <a class="amm-btn-outline amm-btn-invert" href="mailto:sales@infersioai.com?subject=App%20Maintenance%20%26%20Updates">Request a Plan</a>
                 </div>
             </div>

@@ -15,6 +15,7 @@ declare(strict_types=1);
 
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="custom-business-software.css">
+    <link rel="stylesheet" href="premium-bw-mixed.css">
 </head>
 <body id="page-top" class="ai-cbs-page">
     <header class="site-header">
@@ -65,8 +66,8 @@ declare(strict_types=1);
                             <li><a href="cloud-software.php">Cloud-Based Software Solutions</a></li>
                         </ul>
                     </li>
-                    <li><a href="index.php#about">About Us</a></li>
-                    <li><a href="index.php#contact">Contact</a></li>
+                    <li><a href="about.php">About Us</a></li>
+                    <li><a href="contact.php">Contact</a></li>
                 </ul>
             </nav>
         </div>
@@ -188,7 +189,7 @@ declare(strict_types=1);
                     Walk us through your processes and pain points—we’ll propose a phased build that proves value early and scales with adoption.
                 </p>
                 <div class="cbs-cta-actions">
-                    <a class="cbs-btn-outline" href="index.php#contact">Contact Us</a>
+                    <a class="cbs-btn-outline" href="contact.php">Contact Us</a>
                     <a class="cbs-btn-outline cbs-btn-invert" href="mailto:sales@infersioai.com?subject=Custom%20Business%20Software">Start a Project</a>
                 </div>
             </div>

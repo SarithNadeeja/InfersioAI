@@ -15,6 +15,7 @@ declare(strict_types=1);
 
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="ai-solutions.css">
+    <link rel="stylesheet" href="premium-bw-mixed.css">
 </head>
 <body id="page-top" class="ai-solutions-page">
     <header class="site-header">
@@ -65,8 +66,8 @@ declare(strict_types=1);
                             <li><a href="cloud-software.php">Cloud-Based Software Solutions</a></li>
                         </ul>
                     </li>
-                    <li><a href="index.php#about">About Us</a></li>
-                    <li><a href="index.php#contact">Contact</a></li>
+                    <li><a href="about.php">About Us</a></li>
+                    <li><a href="contact.php">Contact</a></li>
                 </ul>
             </nav>
         </div>
@@ -182,7 +183,7 @@ declare(strict_types=1);
                     Our team will help you choose the right solution based on your needs.
                 </p>
                 <div class="ai-cta-actions">
-                    <a class="ai-btn-outline ai-btn-wide" href="index.php#contact">Contact Us</a>
+                    <a class="ai-btn-outline ai-btn-wide" href="contact.php">Contact Us</a>
                     <a class="ai-btn-outline ai-btn-wide ai-btn-invert" href="mailto:sales@infersioai.com?subject=Consultation%20Request">Book Consultation</a>
                 </div>
             </div>

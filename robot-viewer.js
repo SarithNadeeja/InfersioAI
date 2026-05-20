@@ -34,6 +34,8 @@
         "systemAutomationToolsPageRobotAssistant",
         "apiDevelopmentPageRobotAssistant",
         "cloudSoftwarePageRobotAssistant",
+        "aboutPageRobotAssistant",
+        "contactPageRobotAssistant",
     ]);
     const IDLE_WAVE_CYCLE_SECONDS = 30;
 
@@ -119,7 +121,9 @@
         assistantKey === "customBusinessSoftwarePageRobotAssistant" ||
         assistantKey === "systemAutomationToolsPageRobotAssistant" ||
         assistantKey === "apiDevelopmentPageRobotAssistant" ||
-        assistantKey === "cloudSoftwarePageRobotAssistant"
+        assistantKey === "cloudSoftwarePageRobotAssistant" ||
+        assistantKey === "aboutPageRobotAssistant" ||
+        assistantKey === "contactPageRobotAssistant"
             ? "idle"
             : "walk";
     let pendingThumbsUp = false;
@@ -147,9 +151,9 @@
     }
 
     function resizeRenderer() {
-        const rect = container.getBoundingClientRect();
-        const width = Math.max(1, rect.width);
-        const height = Math.max(1, rect.height);
+        // Use clientWidth/Height to get the layout size ignoring CSS transforms
+        const width = Math.max(1, container.clientWidth);
+        const height = Math.max(1, container.clientHeight);
 
         camera.aspect = width / height;
         camera.updateProjectionMatrix();
@@ -158,12 +162,11 @@
         renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     }
 
-    window.addEventListener("resize", resizeRenderer);
+    const resizeObserver = new ResizeObserver(() => {
+        resizeRenderer();
+    });
+    resizeObserver.observe(container);
     resizeRenderer();
-
-    function logModelLoaded(path) {
-        console.log("[InfersioAI] Robot GLB loaded OK:", path);
-    }
 
     function fitModel(model) {
         // 1) Center using Box3
@@ -543,7 +546,6 @@
         baseMode = mode;
         if (!mixer) return;
         // Apply immediately by resuming the base pose.
-        console.log("[InfersioAI] service baseMode set:", baseMode);
         resumeBehavior();
     }
 
@@ -551,7 +553,6 @@
     loader.load(
         "assets/RobotExpressive.glb",
         (gltf) => {
-            logModelLoaded("assets/RobotExpressive.glb");
             modelRoot = gltf.scene || (gltf.scenes && gltf.scenes[0]);
             scene.add(modelRoot);
 
@@ -559,7 +560,6 @@
 
             const clips = Array.isArray(gltf.animations) ? gltf.animations : [];
             if (!clips.length) {
-                console.log("No animations found in this model");
                 return;
             }
 
@@ -568,7 +568,6 @@
             const clipNames = clips.map((clip, i) => {
                 const name =
                     clip && clip.name ? clip.name : `Animation ${i + 1}`;
-                console.log(`Animation ${i + 1}: ${clip.name || "(unnamed)"}`);
                 actions[name] = mixer.clipAction(clip);
                 return name;
             });
@@ -598,24 +597,6 @@
             coolName = findClipNameByKeywords(clipNames, ["cool", "confident", "pose", "swagger"]);
             danceName = findClipNameByKeywords(clipNames, ["dance", "dancing", "groove", "party"]);
             deadName = findClipNameByKeywords(clipNames, ["dead", "death", "die", "fall", "collapse", "knockout"]);
-
-            console.log("[InfersioAI] Clips found:", {
-                walkName,
-                idleName,
-                sitName,
-                standName,
-                thumbsName,
-                noName,
-                angryName,
-                sadName,
-                happyName,
-                surprisedName,
-                coolName,
-                danceName,
-                deadName,
-                yesName,
-                waveName,
-            });
 
             // Pick initial base pose based on assistantKey (banner vs services).
             let startName = walkName || clipNames[0];
@@ -684,8 +665,15 @@
         renderer.render(scene, camera);
     }
 
+    // Hub landing pages only: "Learn More" on service cards → yes nod (AI / Web / Mobile / Software mains).
+    const HUB_LEARN_MORE_SAY_YES_KEYS = new Set([
+        "aiPageRobotAssistant",
+        "webSolutionsPageRobotAssistant",
+        "mobileApplicationsPageRobotAssistant",
+        "softwareEngineeringPageRobotAssistant",
+    ]);
+
     // AI Solutions + Web Solutions dedicated pages (corner robot): hover primary "Contact Us" CTA → yes nod.
-    // Excludes homepage (banner / service / review robots) and Mobile Applications page.
     const CONTACT_CTA_HOVER_ASSISTANT_KEYS = new Set([
         "aiPageRobotAssistant",
         "aiAgentsPageRobotAssistant",
@@ -716,7 +704,7 @@
     function attachContactUsCtaHoverSayYes() {
         if (!CONTACT_CTA_HOVER_ASSISTANT_KEYS.has(assistantKey)) return;
         const label = /^\s*contact\s+us\s*$/i;
-        document.querySelectorAll('a[href="index.php#contact"]').forEach((link) => {
+        document.querySelectorAll('a[href="contact.php"]').forEach((link) => {
             const text = (link.textContent || "").replace(/\s+/g, " ").trim();
             if (!label.test(text)) return;
             link.addEventListener("mouseenter", () => {
@@ -743,6 +731,21 @@
         });
     }
 
+    function attachHubLearnMoreHoverSayYes() {
+        if (!HUB_LEARN_MORE_SAY_YES_KEYS.has(assistantKey)) return;
+        const label = /^\s*learn\s+more\s*$/i;
+        document.querySelectorAll("a.ai-btn-outline:not(.ai-btn-wide)").forEach((link) => {
+            const text = (link.textContent || "").replace(/\s+/g, " ").trim();
+            if (!label.test(text)) return;
+            link.addEventListener("mouseenter", () => {
+                sayYes();
+            });
+            link.addEventListener("mouseleave", () => {
+                resumeBehavior();
+            });
+        });
+    }
+
     // Expose a tiny API for website UI events (hover Contact Us).
     // Note: `assistantKey` is window.robotAssistant by default.
     const assistant = (window[assistantKey] = window[assistantKey] || {});
@@ -756,11 +759,119 @@
 
     attachContactUsCtaHoverSayYes();
     attachGetStartedHeroHoverThumbsUp();
+    attachHubLearnMoreHoverSayYes();
+
+    // --- Raycaster & Mouse Interactivity ---
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2();
+    let isHoveringRobot = false;
+
+    function isCornerPageRobotContainer() {
+        return (
+            container.classList.contains("ai-page-robot") ||
+            container.classList.contains("mobile-floating-bot") ||
+            container.id === "global-mobile-robot"
+        );
+    }
+
+    function isClickOnRobotCanvas(e) {
+        if (container.classList.contains("chatbot-mode")) return false;
+        const rect = renderer.domElement.getBoundingClientRect();
+        if (rect.width < 4 || rect.height < 4) return false;
+        return (
+            e.clientX >= rect.left &&
+            e.clientX <= rect.right &&
+            e.clientY >= rect.top &&
+            e.clientY <= rect.bottom
+        );
+    }
+
+    function dispatchRobotClicked(e) {
+        e.stopPropagation();
+        window.dispatchEvent(
+            new CustomEvent("robot-clicked", {
+                detail: { containerId: containerId },
+            })
+        );
+    }
+
+    document.addEventListener("click", (e) => {
+        if (!isClickOnRobotCanvas(e)) return;
+
+        let openChat = false;
+
+        if (modelRoot) {
+            const rect = renderer.domElement.getBoundingClientRect();
+            mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+            mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObject(modelRoot, true);
+            if (intersects.length > 0) {
+                openChat = true;
+            }
+        }
+
+        if (!openChat && isCornerPageRobotContainer()) {
+            openChat = true;
+        }
+
+        if (openChat) {
+            dispatchRobotClicked(e);
+        }
+    });
+
+    document.addEventListener("mousemove", (e) => {
+        if (container.classList.contains("chatbot-mode")) {
+            if (isHoveringRobot) {
+                document.body.style.cursor = "";
+                isHoveringRobot = false;
+            }
+            return;
+        }
+
+        const rect = renderer.domElement.getBoundingClientRect();
+        const overCanvas =
+            rect.width >= 4 &&
+            rect.height >= 4 &&
+            e.clientX >= rect.left &&
+            e.clientX <= rect.right &&
+            e.clientY >= rect.top &&
+            e.clientY <= rect.bottom;
+
+        let showPointer = false;
+
+        if (overCanvas) {
+            if (modelRoot) {
+                mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+                mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+                raycaster.setFromCamera(mouse, camera);
+                const intersects = raycaster.intersectObject(modelRoot, true);
+                showPointer = intersects.length > 0;
+            }
+            if (!showPointer && isCornerPageRobotContainer()) {
+                showPointer = true;
+            }
+        }
+
+        if (showPointer && !isHoveringRobot) {
+            document.body.style.cursor = "pointer";
+            isHoveringRobot = true;
+        } else if (!showPointer && isHoveringRobot) {
+            document.body.style.cursor = "";
+            isHoveringRobot = false;
+        }
+    });
 
     animate();
 
     setTimeout(() => {
         window.dispatchEvent(new CustomEvent(readyEvent, { bubbles: true }));
+        window.dispatchEvent(
+            new CustomEvent("infersio-robot-mounted", {
+                bubbles: true,
+                detail: { containerId: containerId },
+            })
+        );
     }, 0);
 })();
 

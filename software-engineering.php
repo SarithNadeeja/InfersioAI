@@ -14,7 +14,9 @@ declare(strict_types=1);
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet">
 
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="ai-solutions.css">
     <link rel="stylesheet" href="software-engineering.css">
+    <link rel="stylesheet" href="premium-bw-mixed.css">
 </head>
 <body id="page-top" class="ai-se-page">
     <header class="site-header">
@@ -65,8 +67,8 @@ declare(strict_types=1);
                             <li><a href="cloud-software.php">Cloud-Based Software Solutions</a></li>
                         </ul>
                     </li>
-                    <li><a href="index.php#about">About Us</a></li>
-                    <li><a href="index.php#contact">Contact</a></li>
+                    <li><a href="about.php">About Us</a></li>
+                    <li><a href="contact.php">Contact</a></li>
                 </ul>
             </nav>
         </div>
@@ -100,56 +102,76 @@ declare(strict_types=1);
                     </p>
                 </div>
                 <div class="se-about-visual" data-reveal style="--reveal-delay: 80ms">
-                    <img src="assets/software-main.jpg" alt="" width="960" height="680" loading="lazy" decoding="async">
+                    <img src="assets/software-main2.jpg" alt="" width="960" height="680" loading="lazy" decoding="async">
                 </div>
             </div>
         </section>
 
-        <section id="se-services" class="se-services" aria-labelledby="se-services-heading">
-            <div class="se-services-inner">
-                <p class="se-section-label" data-reveal>Services</p>
-                <h2 id="se-services-heading" class="se-services-title" data-reveal style="--reveal-delay: 40ms">
-                    What we build
-                </h2>
-                <p class="se-services-intro" data-reveal style="--reveal-delay: 80ms">
-                    End-to-end engineering for applications, integrations, and platforms—designed to scale with your roadmap.
-                </p>
+        <section id="se-services" class="ai-services" aria-labelledby="se-services-heading">
+            <div class="ai-services-inner">
+                <p class="ai-section-eyebrow">Capabilities</p>
+                <h2 id="se-services-heading" class="ai-section-title">What we build</h2>
 
-                <div class="se-grid">
-                    <article id="se-svc-desktop" class="se-card" data-reveal style="--reveal-delay: 0ms">
-                        <h3 class="se-card-title">Desktop Application Development</h3>
-                        <p class="se-card-desc">
-                            Native and cross-platform desktop apps for Windows and macOS—fast UIs, offline capability, and enterprise deployment options.
-                        </p>
-                        <a class="se-card-learn-more" href="desktop-application-development.php">Learn More</a>
+                <div class="ai-grid">
+                    <article id="se-svc-desktop" class="ai-card" data-reveal style="--reveal-delay: 0ms">
+                        <div class="ai-card-media">
+                            <img src="assets/desktop-app.jpg" alt="" width="800" height="520" loading="lazy" decoding="async">
+                        </div>
+                        <div class="ai-card-body">
+                            <h3 class="ai-card-title">Desktop Application Development</h3>
+                            <p class="ai-card-desc">
+                                Native and cross-platform desktop apps for Windows and macOS—fast UIs, offline capability, and enterprise deployment options.
+                            </p>
+                            <a class="ai-btn-outline" href="desktop-application-development.php">Learn More</a>
+                        </div>
                     </article>
-                    <article id="se-svc-custom" class="se-card" data-reveal style="--reveal-delay: 60ms">
-                        <h3 class="se-card-title">Custom Business Software</h3>
-                        <p class="se-card-desc">
-                            Tailored systems for operations, finance, and customer workflows—built around your rules, roles, and reporting needs.
-                        </p>
-                        <a class="se-card-learn-more" href="custom-business-software.php">Learn More</a>
+                    <article id="se-svc-custom" class="ai-card" data-reveal style="--reveal-delay: 60ms">
+                        <div class="ai-card-media">
+                            <img src="assets/software-system.jpg" alt="" width="800" height="520" loading="lazy" decoding="async">
+                        </div>
+                        <div class="ai-card-body">
+                            <h3 class="ai-card-title">Custom Business Software</h3>
+                            <p class="ai-card-desc">
+                                Tailored systems for operations, finance, and customer workflows—built around your rules, roles, and reporting needs.
+                            </p>
+                            <a class="ai-btn-outline" href="custom-business-software.php">Learn More</a>
+                        </div>
                     </article>
-                    <article id="se-svc-automation" class="se-card" data-reveal style="--reveal-delay: 0ms">
-                        <h3 class="se-card-title">System Automation Tools</h3>
-                        <p class="se-card-desc">
-                            Scripts, schedulers, and pipelines that eliminate repetitive work and connect your tools with dependable automation.
-                        </p>
-                        <a class="se-card-learn-more" href="system-automation-tools.php">Learn More</a>
+                    <article id="se-svc-automation" class="ai-card" data-reveal style="--reveal-delay: 120ms">
+                        <div class="ai-card-media">
+                            <img src="assets/automation-tools.jpg" alt="" width="800" height="520" loading="lazy" decoding="async">
+                        </div>
+                        <div class="ai-card-body">
+                            <h3 class="ai-card-title">System Automation Tools</h3>
+                            <p class="ai-card-desc">
+                                Scripts, schedulers, and pipelines that eliminate repetitive work and connect your tools with dependable automation.
+                            </p>
+                            <a class="ai-btn-outline" href="system-automation-tools.php">Learn More</a>
+                        </div>
                     </article>
-                    <article id="se-svc-api" class="se-card" data-reveal style="--reveal-delay: 60ms">
-                        <h3 class="se-card-title">API Development &amp; Integration</h3>
-                        <p class="se-card-desc">
-                            REST and event-driven APIs, partner integrations, and data sync layers with clear contracts and monitoring.
-                        </p>
-                        <a class="se-card-learn-more" href="api-development.php">Learn More</a>
+                    <article id="se-svc-api" class="ai-card" data-reveal style="--reveal-delay: 0ms">
+                        <div class="ai-card-media">
+                            <img src="assets/api-dev.jpg" alt="" width="800" height="520" loading="lazy" decoding="async">
+                        </div>
+                        <div class="ai-card-body">
+                            <h3 class="ai-card-title">API Development &amp; Integration</h3>
+                            <p class="ai-card-desc">
+                                REST and event-driven APIs, partner integrations, and data sync layers with clear contracts and monitoring.
+                            </p>
+                            <a class="ai-btn-outline" href="api-development.php">Learn More</a>
+                        </div>
                     </article>
-                    <article id="se-svc-cloud" class="se-card" data-reveal style="--reveal-delay: 0ms">
-                        <h3 class="se-card-title">Cloud-Based Software Solutions</h3>
-                        <p class="se-card-desc">
-                            Cloud-native services with resilient hosting, scaling policies, and security practices aligned to your compliance goals.
-                        </p>
-                        <a class="se-card-learn-more" href="cloud-software.php">Learn More</a>
+                    <article id="se-svc-cloud" class="ai-card" data-reveal style="--reveal-delay: 60ms">
+                        <div class="ai-card-media">
+                            <img src="assets/cloud-software.jpg" alt="" width="800" height="520" loading="lazy" decoding="async">
+                        </div>
+                        <div class="ai-card-body">
+                            <h3 class="ai-card-title">Cloud-Based Software Solutions</h3>
+                            <p class="ai-card-desc">
+                                Cloud-native services with resilient hosting, scaling policies, and security practices aligned to your compliance goals.
+                            </p>
+                            <a class="ai-btn-outline" href="cloud-software.php">Learn More</a>
+                        </div>
                     </article>
                 </div>
             </div>
@@ -197,7 +219,7 @@ declare(strict_types=1);
                     Tell us about your workflows, users, and constraints—we’ll propose a technical plan that fits your budget and timeline.
                 </p>
                 <div class="se-cta-actions">
-                    <a class="se-btn-outline" href="index.php#contact">Contact Us</a>
+                    <a class="se-btn-outline" href="contact.php">Contact Us</a>
                     <a class="se-btn-outline se-btn-invert" href="mailto:sales@infersioai.com?subject=Software%20Engineering">Start a Project</a>
                 </div>
             </div>

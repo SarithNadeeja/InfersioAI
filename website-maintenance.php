@@ -15,6 +15,7 @@ declare(strict_types=1);
 
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="website-maintenance.css">
+    <link rel="stylesheet" href="premium-bw-mixed.css">
 </head>
 <body id="page-top" class="ai-wm-page">
     <header class="site-header">
@@ -65,8 +66,8 @@ declare(strict_types=1);
                             <li><a href="cloud-software.php">Cloud-Based Software Solutions</a></li>
                         </ul>
                     </li>
-                    <li><a href="index.php#about">About Us</a></li>
-                    <li><a href="index.php#contact">Contact</a></li>
+                    <li><a href="about.php">About Us</a></li>
+                    <li><a href="contact.php">Contact</a></li>
                 </ul>
             </nav>
         </div>
@@ -189,7 +190,7 @@ declare(strict_types=1);
                     Tell us about your site and stack—we’ll propose a maintenance plan that fits your risk profile and goals.
                 </p>
                 <div class="wm-cta-actions">
-                    <a class="wm-btn-outline" href="index.php#contact">Contact Us</a>
+                    <a class="wm-btn-outline" href="contact.php">Contact Us</a>
                     <a class="wm-btn-outline wm-btn-invert" href="mailto:sales@infersioai.com?subject=Website%20Maintenance%20%26%20Support">Request a Plan</a>
                 </div>
             </div>

@@ -15,6 +15,7 @@ declare(strict_types=1);
 
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="cross-platform-apps.css">
+    <link rel="stylesheet" href="premium-bw-mixed.css">
 </head>
 <body id="page-top" class="ai-cpa-page">
     <header class="site-header">
@@ -65,8 +66,8 @@ declare(strict_types=1);
                             <li><a href="cloud-software.php">Cloud-Based Software Solutions</a></li>
                         </ul>
                     </li>
-                    <li><a href="index.php#about">About Us</a></li>
-                    <li><a href="index.php#contact">Contact</a></li>
+                    <li><a href="about.php">About Us</a></li>
+                    <li><a href="contact.php">Contact</a></li>
                 </ul>
             </nav>
         </div>
@@ -189,7 +190,7 @@ declare(strict_types=1);
                     Tell us about your product and release goals—we’ll recommend Flutter or React Native and a delivery plan that fits.
                 </p>
                 <div class="cpa-cta-actions">
-                    <a class="cpa-btn-outline" href="index.php#contact">Contact Us</a>
+                    <a class="cpa-btn-outline" href="contact.php">Contact Us</a>
                     <a class="cpa-btn-outline cpa-btn-invert" href="mailto:sales@infersioai.com?subject=Cross-Platform%20App%20Development">Start a Project</a>
                 </div>
             </div>

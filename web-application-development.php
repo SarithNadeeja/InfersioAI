@@ -15,6 +15,7 @@ declare(strict_types=1);
 
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="web-application-development.css">
+    <link rel="stylesheet" href="premium-bw-mixed.css">
 </head>
 <body id="page-top" class="ai-wad-page">
     <header class="site-header">
@@ -65,8 +66,8 @@ declare(strict_types=1);
                             <li><a href="cloud-software.php">Cloud-Based Software Solutions</a></li>
                         </ul>
                     </li>
-                    <li><a href="index.php#about">About Us</a></li>
-                    <li><a href="index.php#contact">Contact</a></li>
+                    <li><a href="about.php">About Us</a></li>
+                    <li><a href="contact.php">Contact</a></li>
                 </ul>
             </nav>
         </div>
@@ -189,7 +190,7 @@ declare(strict_types=1);
                     Share your requirements—we’ll architect and build a solution that fits your roadmap.
                 </p>
                 <div class="wad-cta-actions">
-                    <a class="wad-btn-outline" href="index.php#contact">Contact Us</a>
+                    <a class="wad-btn-outline" href="contact.php">Contact Us</a>
                     <a class="wad-btn-outline wad-btn-invert" href="mailto:sales@infersioai.com?subject=Web%20Application%20Development">Start a Project</a>
                 </div>
             </div>
