@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . "/../includes/admin_auth.php";
+require_once __DIR__ . "/../includes/admin_layout.php";
 
 $user = admin_require_login();
 if (!empty($user["must_change_password"])) {
@@ -48,14 +49,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $id = (int) ($_POST["id"] ?? 0);
     $name = trim((string) ($_POST["name"] ?? ""));
     $role = trim((string) ($_POST["role"] ?? ""));
-    $profileLink = trim((string) ($_POST["profile_link"] ?? ""));
-    $imageUrlField = trim((string) ($_POST["image_url_field"] ?? ""));
     $sortOrder = (int) ($_POST["sort_order"] ?? 0);
+    $profileLink = "#";
 
-    if ($name === "" || $role === "" || $profileLink === "") {
-        $error = "Name, role, and profile link are required.";
-    } elseif (!filter_var($profileLink, FILTER_VALIDATE_URL)) {
-        $error = "Profile link must be a valid URL.";
+    if ($name === "" || $role === "") {
+        $error = "Name and profession are required.";
     } else {
         $finalImage = "";
         $hasUpload = isset($_FILES["photo"]) && ($_FILES["photo"]["error"] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE;
@@ -84,16 +82,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                         $finalImage = "uploads/team-photos/" . $fname;
                     }
                 }
-            }
-        }
-
-        if ($error === "" && $finalImage === "" && $imageUrlField !== "") {
-            if (filter_var($imageUrlField, FILTER_VALIDATE_URL)) {
-                $finalImage = $imageUrlField;
-            } elseif (preg_match('#^(assets/|uploads/)#i', $imageUrlField)) {
-                $finalImage = $imageUrlField;
-            } else {
-                $error = "Image URL must be a valid http(s) URL or a path starting with assets/ or uploads/.";
             }
         }
 
@@ -144,7 +132,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 exit;
             } else {
                 if ($finalImage === "") {
-                    $error = "Provide a photo upload or an image URL / path.";
+                    $error = "Photo is required when adding a leadership member.";
                 } else {
                     $ins = $pdo->prepare(
                         "INSERT INTO team_members (name, role, image_url, profile_link, sort_order)
@@ -173,41 +161,21 @@ if ($editId > 0) {
 
 $members = $pdo->query("SELECT * FROM team_members ORDER BY sort_order ASC, id ASC")->fetchAll();
 $okMap = [
-    "added" => "Team member added.",
-    "updated" => "Team member updated.",
-    "deleted" => "Team member removed.",
+    "added" => "Leadership member added.",
+    "updated" => "Leadership member updated.",
+    "deleted" => "Leadership member removed.",
 ];
 if (!empty($_GET["ok"]) && isset($okMap[$_GET["ok"]])) {
     $ok = $okMap[$_GET["ok"]];
 }
+admin_page_start("Leadership", "leadership");
+admin_page_header("Leadership", "Add name, profession, and photo — shown on the homepage and About page.");
 ?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Team — InfersioAI Admin</title>
-    <link rel="stylesheet" href="admin.css">
-</head>
-<body>
-    <div class="app">
-        <aside class="sidebar">
-            <div class="brand">InfersioAI Admin</div>
-            <a class="nav-link" href="index.php">Dashboard</a>
-            <a class="nav-link" href="clients.php">Client Manager</a>
-            <a class="nav-link active" href="team.php">Team (About)</a>
-            <a class="nav-link" href="projects.php?service=ai-solutions">AI Solutions</a>
-            <a class="nav-link" href="projects.php?service=web-solutions">Web Solutions</a>
-            <a class="nav-link" href="projects.php?service=mobile-applications">Mobile Applications</a>
-            <a class="nav-link" href="projects.php?service=software-development">Software Development</a>
-            <a class="nav-link" href="logout.php">Logout</a>
-        </aside>
-        <main class="content">
+
             <div class="card">
-                <h2><?= $editing ? "Edit team member" : "Add team member" ?></h2>
-                <p class="muted">Shown on the public <a href="../about.php" target="_blank" rel="noopener noreferrer">About</a> page. Image: upload a file, or enter a full image URL / path like <code>assets/photo.jpg</code>.</p>
+                <h2><?= $editing ? "Edit member" : "Add member" ?></h2>
                 <?php if ($error): ?><div class="msg"><?= htmlspecialchars($error) ?></div><?php endif; ?>
-                <?php if ($ok): ?><div style="margin-bottom:10px;color:#86efac;"><?= htmlspecialchars($ok) ?></div><?php endif; ?>
+                <?php if ($ok): ?><div class="alert-success"><?= htmlspecialchars($ok) ?></div><?php endif; ?>
                 <form method="post" enctype="multipart/form-data">
                     <input type="hidden" name="id" value="<?= $editing ? (int) $editing["id"] : 0 ?>">
                     <div class="grid">
@@ -216,21 +184,17 @@ if (!empty($_GET["ok"]) && isset($okMap[$_GET["ok"]])) {
                             <input id="name" name="name" type="text" required value="<?= htmlspecialchars((string) ($editing["name"] ?? "")) ?>">
                         </div>
                         <div>
-                            <label for="role">Role</label>
-                            <input id="role" name="role" type="text" required placeholder="e.g. Founder, Developer" value="<?= htmlspecialchars((string) ($editing["role"] ?? "")) ?>">
+                            <label for="role">Profession</label>
+                            <input id="role" name="role" type="text" required placeholder="e.g. CEO, Lead Developer" value="<?= htmlspecialchars((string) ($editing["role"] ?? "")) ?>">
                         </div>
                     </div>
-                    <label for="profile_link">Profile link (LinkedIn or portfolio)</label>
-                    <input id="profile_link" name="profile_link" type="url" required value="<?= htmlspecialchars((string) ($editing["profile_link"] ?? "")) ?>">
-                    <label for="image_url_field">Image URL or path (if not uploading)</label>
-                    <input id="image_url_field" name="image_url_field" type="text" placeholder="https://… or assets/team/name.jpg" value="<?= htmlspecialchars(preg_match('#^https?://#i', (string) ($editing["image_url"] ?? "")) ? (string) ($editing["image_url"] ?? "") : "") ?>">
-                    <label for="photo">Photo file <?= $editing ? "(optional — replaces image)" : "" ?></label>
-                    <input id="photo" name="photo" type="file" accept=".png,.jpg,.jpeg,.webp,.gif">
+                    <label for="photo">Photo <?= $editing ? "(optional — replaces current)" : "" ?></label>
+                    <input id="photo" name="photo" type="file" accept=".png,.jpg,.jpeg,.webp,.gif" <?= $editing ? "" : "required" ?>>
                     <div>
-                        <label for="sort_order">Sort order (lower = first)</label>
+                        <label for="sort_order">Display order (lower appears first)</label>
                         <input id="sort_order" name="sort_order" type="number" value="<?= (int) ($editing["sort_order"] ?? 0) ?>">
                     </div>
-                    <button class="btn" type="submit"><?= $editing ? "Update" : "Add" ?></button>
+                    <button class="btn" type="submit"><?= $editing ? "Update member" : "Add member" ?></button>
                     <?php if ($editing): ?>
                         <a class="btn btn-ghost" href="team.php">Cancel</a>
                     <?php endif; ?>
@@ -238,22 +202,21 @@ if (!empty($_GET["ok"]) && isset($okMap[$_GET["ok"]])) {
             </div>
 
             <div class="card">
-                <h2>Team members</h2>
+                <h2>All leadership</h2>
                 <div class="table-wrap">
                     <table>
                         <thead>
                             <tr>
                                 <th>Photo</th>
                                 <th>Name</th>
-                                <th>Role</th>
-                                <th>Profile</th>
-                                <th>Sort</th>
+                                <th>Profession</th>
+                                <th>Order</th>
                                 <th></th>
                             </tr>
                         </thead>
                         <tbody>
                         <?php if (!$members): ?>
-                            <tr><td colspan="6" class="muted">No team members yet.</td></tr>
+                            <tr><td colspan="5" class="muted">No leadership members yet.</td></tr>
                         <?php else: ?>
                             <?php foreach ($members as $m): ?>
                                 <tr>
@@ -266,7 +229,6 @@ if (!empty($_GET["ok"]) && isset($okMap[$_GET["ok"]])) {
                                     </td>
                                     <td><?= htmlspecialchars((string) $m["name"]) ?></td>
                                     <td><?= htmlspecialchars((string) $m["role"]) ?></td>
-                                    <td><a href="<?= htmlspecialchars((string) $m["profile_link"]) ?>" target="_blank" rel="noopener noreferrer">Open</a></td>
                                     <td><?= (int) $m["sort_order"] ?></td>
                                     <td>
                                         <div class="row-actions">
@@ -281,7 +243,5 @@ if (!empty($_GET["ok"]) && isset($okMap[$_GET["ok"]])) {
                     </table>
                 </div>
             </div>
-        </main>
-    </div>
-</body>
-</html>
+
+<?php admin_page_end(); ?>

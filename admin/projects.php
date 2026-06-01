@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . "/../includes/admin_auth.php";
+require_once __DIR__ . "/../includes/admin_layout.php";
 
 $user = admin_require_login();
 if (!empty($user["must_change_password"])) {
@@ -188,33 +189,14 @@ $okMap = [
 if (!empty($_GET["ok"]) && isset($okMap[$_GET["ok"]])) {
     $ok = $okMap[$_GET["ok"]];
 }
+admin_page_start($services[$service] . " Projects", admin_projects_active_key($service));
+admin_page_header($services[$service] . " projects", "Manage portfolio entries for this service category.");
 ?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= htmlspecialchars($services[$service]) ?> - InfersioAI Admin</title>
-    <link rel="stylesheet" href="admin.css">
-</head>
-<body>
-    <div class="app">
-        <aside class="sidebar">
-            <div class="brand">InfersioAI Admin</div>
-            <a class="nav-link" href="index.php">Dashboard</a>
-            <a class="nav-link" href="clients.php">Client Manager</a>
-            <a class="nav-link" href="team.php">Team (About)</a>
-            <a class="nav-link <?= $service === "ai-solutions" ? "active" : "" ?>" href="projects.php?service=ai-solutions">AI Solutions</a>
-            <a class="nav-link <?= $service === "web-solutions" ? "active" : "" ?>" href="projects.php?service=web-solutions">Web Solutions</a>
-            <a class="nav-link <?= $service === "mobile-applications" ? "active" : "" ?>" href="projects.php?service=mobile-applications">Mobile Applications</a>
-            <a class="nav-link <?= $service === "software-development" ? "active" : "" ?>" href="projects.php?service=software-development">Software Development</a>
-            <a class="nav-link" href="logout.php">Logout</a>
-        </aside>
-        <main class="content">
+
             <div class="card">
                 <h2><?= htmlspecialchars($services[$service]) ?> Projects</h2>
                 <?php if ($error): ?><div class="msg"><?= htmlspecialchars($error) ?></div><?php endif; ?>
-                <?php if ($ok): ?><div style="margin-bottom:10px;color:#86efac;"><?= htmlspecialchars($ok) ?></div><?php endif; ?>
+                <?php if ($ok): ?><div class="alert-success"><?= htmlspecialchars($ok) ?></div><?php endif; ?>
                 <form method="post">
                     <input type="hidden" name="id" value="<?= $editing ? (int) $editing["id"] : 0 ?>">
                     <input type="hidden" name="service_type" value="<?= htmlspecialchars($service) ?>">
@@ -305,7 +287,5 @@ if (!empty($_GET["ok"]) && isset($okMap[$_GET["ok"]])) {
                     </table>
                 </div>
             </div>
-        </main>
-    </div>
-</body>
-</html>
+
+<?php admin_page_end(); ?>

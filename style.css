@@ -1774,3 +1774,20 @@ body.chat-modal-open {
         padding: 0 22px !important;
     }
 }
+
+/* Minimal blank homepage shell */
+.site-main--blank {
+    min-height: calc(100vh - 140px);
+}
+
+.site-footer--minimal {
+    padding: 24px 0;
+    text-align: center;
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.site-footer--minimal p {
+    margin: 0;
+    font-size: 0.875rem;
+    color: rgba(0, 0, 0, 0.55);
+}

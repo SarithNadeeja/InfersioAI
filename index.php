@@ -1,44 +1,33 @@
 <?php
 declare(strict_types=1);
-require_once __DIR__ . "/includes/db.php";
-$clientLogos = public_clients();
 
-$homeCounters = [
-    "ai-solutions" => 0,
-    "web-solutions" => 0,
-    "mobile-applications" => 0,
-    "software-development" => 0,
-    "today_revenue" => 0.0,
-];
-
-try {
-    bootstrap_database();
-    $pdo = db();
-
-    $countStmt = $pdo->query(
-        "SELECT service_type, COUNT(*) AS total
-         FROM service_projects
-         GROUP BY service_type"
-    );
-    foreach ($countStmt->fetchAll() as $row) {
-        $serviceType = (string) ($row["service_type"] ?? "");
-        if (array_key_exists($serviceType, $homeCounters)) {
-            $homeCounters[$serviceType] = (int) $row["total"];
-        }
-    }
-
-    $revenueStmt = $pdo->query(
-        "SELECT COALESCE(SUM(project_value), 0) AS today_revenue
-         FROM service_projects
-         WHERE DATE(created_at) = CURRENT_DATE"
-    );
-    $homeCounters["today_revenue"] = (float) ($revenueStmt->fetchColumn() ?: 0);
-} catch (Throwable $e) {
-    // Keep homepage resilient if DB is unavailable.
+session_start();
+if (empty($_SESSION["comment_csrf"])) {
+    $_SESSION["comment_csrf"] = bin2hex(random_bytes(16));
 }
+
+require_once __DIR__ . "/includes/comments.php";
+require_once __DIR__ . "/includes/db.php";
+
+$homeComments = [];
+$homeClients = [];
+$homeLeadership = [];
+try {
+    $homeComments = public_visitor_comments();
+} catch (Throwable $e) {
+    $homeComments = [];
+}
+try {
+    $homeClients = public_clients();
+    $homeLeadership = public_team_members();
+} catch (Throwable $e) {
+    $homeClients = [];
+    $homeLeadership = [];
+}
+
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="home-page-root">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -46,390 +35,365 @@ try {
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
-
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Sora:wght@500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="services.css">
+    <link rel="stylesheet" href="home.css">
 </head>
-<body>
-    <header class="site-header">
-        <div class="container">
-            <a class="logo" href="#home">InfersioAI</a>
-            <button class="nav-toggle" id="navToggle" aria-label="Toggle menu">Menu</button>
-            <nav class="navbar" id="navbar">
-                <ul class="nav-menu">
-                    <li><a href="#home">Home</a></li>
-                    <li class="has-dropdown">
-                        <a href="ai-solutions.php">AI Solutions</a>
-                        <ul class="dropdown">
-                            <li><a href="ai-chatbots.php">AI Chatbots</a></li>
-                            <li><a href="ai-automation.php">AI Automation Systems</a></li>
-                            <li><a href="ai-agents.php">AI Agents</a></li>
-                            <li><a href="ai-lead-generation.php">AI Lead Generation Systems</a></li>
-                            <li><a href="ai-content-automation.php">AI Content Automation</a></li>
-                            <li><a href="ai-security.php">AI Security / Monitoring</a></li>
-                        </ul>
-                    </li>
-                    <li class="has-dropdown">
-                        <a href="web-solutions.php">Web Solutions</a>
-                        <ul class="dropdown">
-                            <li><a href="custom-website-development.php">Custom Website Development</a></li>
-                            <li><a href="web-application-development.php">Web Application Development</a></li>
-                            <li><a href="ecommerce-solutions.php">E-Commerce Solutions</a></li>
-                            <li><a href="ui-ux-design.php">UI/UX Design &amp; Optimization</a></li>
-                            <li><a href="website-maintenance.php">Website Maintenance &amp; Support</a></li>
-                        </ul>
-                    </li>
-                    <li class="has-dropdown">
-                        <a href="mobile-applications.php">Mobile Applications</a>
-                        <ul class="dropdown">
-                            <li><a href="android-app-development.php">Android App Development</a></li>
-                            <li><a href="ios-app-development.php">iOS App Development</a></li>
-                            <li><a href="cross-platform-apps.php">Cross-Platform Apps (Flutter / React Native)</a></li>
-                            <li><a href="app-ui-ux-design.php">App UI/UX Design</a></li>
-                            <li><a href="app-maintenance.php">App Maintenance &amp; Updates</a></li>
-                        </ul>
-                    </li>
-                    <li class="has-dropdown">
-                        <a href="software-engineering.php">Software</a>
-                        <ul class="dropdown">
-                            <li><a href="desktop-application-development.php">Desktop Application Development (Windows / macOS)</a></li>
-                            <li><a href="custom-business-software.php">Custom Business Software</a></li>
-                            <li><a href="system-automation-tools.php">System Automation Tools</a></li>
-                            <li><a href="api-development.php">API Development &amp; Integration</a></li>
-                            <li><a href="cloud-software.php">Cloud-Based Software Solutions</a></li>
-                        </ul>
-                    </li>
-                    <li><a href="about.php">About Us</a></li>
-                    <li><a href="contact.php">Contact</a></li>
-                </ul>
-            </nav>
+<body id="page-top" class="home-page is-loading">
+    <div
+        id="ai-loader"
+        class="ai-loader"
+        role="progressbar"
+        aria-valuemin="0"
+        aria-valuemax="100"
+        aria-valuenow="0"
+        aria-label="Loading website"
+    >
+        <div class="ai-loader__grid" aria-hidden="true"></div>
+        <div class="ai-loader__glow" aria-hidden="true"></div>
+
+        <div class="ai-loader__core">
+            <div class="ai-loader__orb" aria-hidden="true">
+                <svg class="ai-loader__nodes" viewBox="0 0 160 160" xmlns="http://www.w3.org/2000/svg">
+                    <line class="ai-loader__line" x1="80" y1="80" x2="30" y2="40" />
+                    <line class="ai-loader__line" x1="80" y1="80" x2="130" y2="35" />
+                    <line class="ai-loader__line" x1="80" y1="80" x2="140" y2="100" />
+                    <line class="ai-loader__line" x1="80" y1="80" x2="50" y2="125" />
+                    <line class="ai-loader__line" x1="80" y1="80" x2="80" y2="20" />
+                    <circle class="ai-loader__node" cx="30" cy="40" r="4" />
+                    <circle class="ai-loader__node" cx="130" cy="35" r="4" />
+                    <circle class="ai-loader__node" cx="140" cy="100" r="4" />
+                    <circle class="ai-loader__node" cx="50" cy="125" r="4" />
+                    <circle class="ai-loader__node" cx="80" cy="20" r="4" />
+                    <circle class="ai-loader__node" cx="80" cy="80" r="5" />
+                </svg>
+                <span class="ai-loader__ring ai-loader__ring--1"></span>
+                <span class="ai-loader__ring ai-loader__ring--2"></span>
+                <span class="ai-loader__ring ai-loader__ring--3"></span>
+                <span class="ai-loader__brain">AI</span>
+            </div>
+
+            <p class="ai-loader__brand">INFERSIOAI</p>
+            <p class="ai-loader__status" id="ai-loader-status">Initializing…</p>
+
+            <div class="ai-loader__track">
+                <span class="ai-loader__bar" id="ai-loader-bar"></span>
+            </div>
+            <span class="ai-loader__pct" id="ai-loader-pct">0%</span>
         </div>
+    </div>
+
+    <header class="home-nav">
+        <a href="index.php" class="home-nav__brand">Infersio AI</a>
+        <nav class="home-nav__menu" id="homeNav" aria-label="Main navigation">
+            <ul class="home-nav__list">
+                <li><a href="index.php" class="home-nav__link is-active" aria-current="page">Home</a></li>
+                <li><a href="services.php" class="home-nav__link">Services</a></li>
+                <li><a href="about.php" class="home-nav__link">About us</a></li>
+                <li><a href="contact.php" class="home-nav__link">Contact us</a></li>
+            </ul>
+        </nav>
+        <button type="button" class="home-nav__toggle" id="homeNavToggle" aria-label="Open menu" aria-expanded="false" aria-controls="homeNav">
+            Menu
+        </button>
     </header>
 
-    <main>
-        <section id="home" class="hero section">
-            <div class="hero-media" aria-hidden="true">
-                <video class="hero-video" autoplay muted loop playsinline>
-                    <source src="assets/banner.mp4" type="video/mp4">
-                    Your browser does not support the video tag.
+    <main class="site-main site-main--fullscreen">
+        <section id="home" class="hero-banner" aria-label="Banner">
+            <div class="hero-banner__media" aria-hidden="true">
+                <video
+                    id="banner-video"
+                    class="hero-banner__video"
+                    muted
+                    playsinline
+                    webkit-playsinline
+                    preload="auto"
+                    disablePictureInPicture
+                >
+                    <source src="assets/banner.webm" type="video/webm">
                 </video>
             </div>
+            <div class="hero-banner__shade" aria-hidden="true"></div>
+        </section>
 
-            <div class="section-inner">
-            <div class="container hero-content">
-                <div class="hero-card">
-                    <div class="hero-badge">AI for Modern Businesses</div>
+        <section id="services" class="home-services" aria-hidden="true" aria-label="Our services">
+            <div class="home-services__inner">
+                <h2 class="home-services__heading">OUR SERVICES</h2>
 
-                    <div class="hero-rotator" aria-label="Featured capabilities">
-                        <div id="hero-slide-1" class="hero-rotator-item is-active">
-                            <h1>
-                                Intelligent <span class="gradient-text">AI</span> Solutions for a
-                                <span class="gradient-text">Smarter</span> <span class="gradient-text">Future</span>
-                            </h1>
-                            <p>
-                                We design and build advanced web, mobile, and AI-powered systems
-                                that help businesses grow, automate, and stay ahead in a rapidly
-                                evolving digital world.
-                            </p>
+                <ul class="home-services__grid">
+                    <li class="home-services__card">
+                        <div class="home-services__media">
+                            <img
+                                class="home-services__image"
+                                src="assets/ai.webp"
+                                alt="AI services"
+                                decoding="async"
+                            >
                         </div>
-
-                        <div id="hero-rotator-ai" class="hero-rotator-item">
-                            <h1>
-                                Transforming Businesses with <span class="gradient-text">AI</span> Innovation
-                            </h1>
-                            <p>
-                                From intelligent automation to custom AI agents, InfersioAI delivers
-                                cutting-edge solutions that redefine how businesses operate and scale.
-                            </p>
+                        <p class="home-services__title">AI</p>
+                    </li>
+                    <li class="home-services__card">
+                        <div class="home-services__media">
+                            <img
+                                class="home-services__image"
+                                src="assets/development.webp"
+                                alt="Development services"
+                                decoding="async"
+                            >
                         </div>
-
-                        <div id="software-engineering" class="hero-rotator-item">
-                            <h1>
-                                Engineering the <span class="gradient-text">Future</span> of Digital Experiences
-                            </h1>
-                            <p>
-                                We combine modern development with artificial intelligence to create
-                                powerful, scalable, and user-focused solutions for forward-thinking businesses.
-                            </p>
+                        <p class="home-services__title">Development</p>
+                    </li>
+                    <li class="home-services__card">
+                        <div class="home-services__media">
+                            <img
+                                class="home-services__image"
+                                src="assets/cloud.webp"
+                                alt="Cloud services"
+                                decoding="async"
+                            >
                         </div>
-                    </div>
+                        <p class="home-services__title">Cloud</p>
+                    </li>
+                </ul>
 
-                    <a class="cta-btn hero-cta" href="contact.php">Contact Us</a>
+                <div class="home-services__actions">
+                    <a href="contact.php" class="home-services__btn home-services__btn--primary">Contact us</a>
+                    <a href="services.php" class="home-services__btn home-services__btn--secondary">Explore Services</a>
                 </div>
             </div>
-            </div>
-
-            <!-- Banner robot: stays with the banner and scrolls away with it -->
-            <div id="robot-container" class="robot-container" aria-label="Robot assistant viewer"></div>
         </section>
 
-        <section id="ai-solutions" class="section service-slide" aria-label="AI Solutions">
-            <div class="section-inner">
-                    <div class="service-layout">
-                        <div class="service-robot-slot">
-                            <div id="service-robot-container" class="service-robot-container" aria-label="Service robot viewer"></div>
-                        </div>
-                        <div class="service-copy">
-                            <h2><span class="gradient-text">AI</span> Solutions</h2>
-                            <p class="service-lede">
-                                Intelligent systems that understand your workflows, reduce manual work, and
-                                scale with your business—from first prototype to production-grade deployment.
-                            </p>
-                            <ul class="service-list">
-                                <li><a class="service-list-link" href="ai-chatbots.php">Custom AI Chatbots</a></li>
-                                <li>AI Agents &amp; Automation</li>
-                                <li>Machine Learning Solutions</li>
-                                <li>AI Integration for Web &amp; Apps</li>
-                            </ul>
-                            <a class="service-cta" href="contact.php">Get More Details</a>
-                        </div>
+        <section id="why-choose" class="home-why" aria-labelledby="home-why-heading">
+            <div class="home-why__inner">
+                <div class="home-why__copy">
+                    <h2 id="home-why-heading" class="home-why__title">Why Choose Infersio AI?</h2>
+                    <div class="home-why__text">
+                        <p>
+                            At Infersio AI, we believe technology should be a growth engine, not just a business expense.
+                            We combine artificial intelligence, custom software development, and cloud technologies to create
+                            solutions that help businesses operate more efficiently, reduce manual effort, and unlock new
+                            opportunities for growth. Every project is designed with a strong focus on performance, security,
+                            scalability, and long-term value.
+                        </p>
+                        <p>
+                            From intelligent business automation and AI-powered assistants to modern web applications,
+                            enterprise software, and cloud infrastructure, we build solutions that are tailored to the unique
+                            needs of each organization. Rather than offering one-size-fits-all products, we take the time to
+                            understand your business processes, challenges, and goals to deliver technology that creates
+                            measurable results.
+                        </p>
+                        <p>
+                            Our commitment goes beyond development. We focus on building reliable digital ecosystems that can
+                            evolve alongside your business, ensuring that your technology remains efficient, secure, and ready
+                            for the future. Whether you're a startup looking to innovate or an established company seeking digital
+                            transformation, Infersio AI provides the expertise and solutions needed to help you stay competitive
+                            in an increasingly digital world.
+                        </p>
                     </div>
-            </div>
-        </section>
-
-        <section id="web-solutions" class="section service-slide service-slide--reverse" aria-label="Web Solutions">
-            <div class="section-inner">
-                    <div class="service-layout">
-                        <div class="service-robot-slot"></div>
-                        <div class="service-copy">
-                            <h2>Web <span class="gradient-text">Solutions</span></h2>
-                            <p class="service-lede">
-                                Fast, accessible, and conversion-focused experiences built on modern stacks—
-                                engineered for performance, SEO, and long-term maintainability.
-                            </p>
-                            <ul class="service-list">
-                                <li>Custom Websites</li>
-                                <li>Web Applications</li>
-                                <li>E-Commerce Platforms</li>
-                                <li>UI/UX Design</li>
-                            </ul>
-                            <a class="service-cta" href="contact.php">Get More Details</a>
-                        </div>
-                    </div>
+                </div>
+                <div class="home-why__media">
+                    <video
+                        class="home-why__video"
+                        autoplay
+                        muted
+                        loop
+                        playsinline
+                        webkit-playsinline
+                        preload="metadata"
+                        poster="assets/whychooseus.webp"
+                        aria-label="Why choose Infersio AI"
+                    >
+                        <source src="assets/whychooseus.webm" type="video/webm">
+                    </video>
+                </div>
             </div>
         </section>
 
-        <section id="mobile-applications" class="section service-slide" aria-label="Mobile Applications">
-            <div class="section-inner">
-                    <div class="service-layout">
-                        <div class="service-robot-slot"></div>
-                        <div class="service-copy">
-                            <h2>Mobile <span class="gradient-text">Applications</span></h2>
-                            <p class="service-lede">
-                                Native-quality apps for Android and iOS, plus efficient cross-platform delivery—
-                                polished UI, solid architecture, and clear analytics hooks.
-                            </p>
-                            <ul class="service-list">
-                                <li>Android Apps</li>
-                                <li>iOS Apps</li>
-                                <li>Cross-Platform Apps</li>
-                                <li>App UI/UX</li>
-                            </ul>
-                            <a class="service-cta" href="contact.php">Get More Details</a>
+        <?php if ($homeClients): ?>
+        <?php
+        $clientMarqueeMid = (int) ceil(count($homeClients) / 2);
+        $clientMarqueeTop = array_slice($homeClients, 0, $clientMarqueeMid);
+        $clientMarqueeBottom = array_slice($homeClients, $clientMarqueeMid);
+        if ($clientMarqueeBottom === []) {
+            $clientMarqueeBottom = $clientMarqueeTop;
+        }
+        $padClientMarqueeRow = static function (array $row, int $minItems = 8): array {
+            if ($row === []) {
+                return [];
+            }
+            $padded = [];
+            while (count($padded) < $minItems) {
+                foreach ($row as $client) {
+                    $padded[] = $client;
+                    if (count($padded) >= $minItems) {
+                        break;
+                    }
+                }
+            }
+            return $padded;
+        };
+        $clientMarqueeTop = $padClientMarqueeRow($clientMarqueeTop);
+        $clientMarqueeBottom = $padClientMarqueeRow($clientMarqueeBottom);
+        ?>
+        <section class="home-clients" aria-labelledby="home-clients-heading">
+            <div class="home-clients__inner">
+                <h2 id="home-clients-heading" class="home-clients__heading">Trusted by clients</h2>
+                <p class="home-clients__sub">Partners who trust InfersioAI to deliver intelligent digital solutions.</p>
+            </div>
+            <div class="home-clients__marquees" aria-hidden="false">
+                <?php foreach ([["row" => $clientMarqueeTop, "dir" => "left"], ["row" => $clientMarqueeBottom, "dir" => "right"]] as $marquee): ?>
+                    <?php if (!$marquee["row"]) {
+                        continue;
+                    } ?>
+                    <div class="home-clients__marquee home-clients__marquee--<?= htmlspecialchars($marquee["dir"]) ?>">
+                        <div class="home-clients__track">
+                            <?php for ($dup = 0; $dup < 2; $dup++): ?>
+                                <div class="home-clients__strip"<?= $dup ? ' aria-hidden="true"' : "" ?>>
+                                    <?php foreach ($marquee["row"] as $client): ?>
+                                        <a
+                                            class="home-clients__card"
+                                            href="<?= htmlspecialchars((string) $client["company_website"]) ?>"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            title="<?= htmlspecialchars((string) $client["company_name"]) ?>"
+                                            tabindex="<?= $dup ? "-1" : "0" ?>"
+                                        >
+                                            <img
+                                                src="<?= htmlspecialchars((string) $client["logo_path"]) ?>"
+                                                alt="<?= htmlspecialchars((string) $client["company_name"]) ?> logo"
+                                                loading="lazy"
+                                                decoding="async"
+                                            >
+                                        </a>
+                                    <?php endforeach; ?>
+                                </div>
+                            <?php endfor; ?>
                         </div>
                     </div>
+                <?php endforeach; ?>
             </div>
         </section>
+        <?php endif; ?>
 
-        <section id="software" class="section service-slide service-slide--reverse" aria-label="Software Engineering">
-            <div class="section-inner">
-                    <div class="service-layout">
-                        <div class="service-robot-slot"></div>
-                        <div class="service-copy">
-                            <h2>Software <span class="gradient-text">Engineering</span></h2>
-                            <p class="service-lede">
-                                Reliable desktop and cloud software, APIs, and automation—designed for security,
-                                observability, and the realities of enterprise operations.
-                            </p>
-                            <ul class="service-list">
-                                <li>Desktop Applications</li>
-                                <li>Business Software</li>
-                                <li>API Development</li>
-                                <li>System Automation</li>
-                            </ul>
-                            <a class="service-cta" href="contact.php">Get More Details</a>
-                        </div>
-                    </div>
-            </div>
-        </section>
-
-        <section id="client-showcase" class="section client-showcase-slide" aria-label="Client Logos">
-            <div class="section-inner">
-                <div class="client-showcase-wrap">
-                    <div class="client-showcase-header">
-                        <div class="client-showcase-title-area">
-                            <h2>Trusted by Our <span class="gradient-text">Clients</span></h2>
-                            <p class="client-showcase-subtitle">Logos are managed from Admin Panel and appear here automatically.</p>
-                        </div>
-                        <div class="client-showcase-stats">
-                            <div class="client-stat-item">
-                                <span class="client-stat-value"><?= (int) $homeCounters["ai-solutions"] ?></span>
-                                <span class="client-stat-label">AI Solutions</span>
-                            </div>
-                            <div class="client-stat-item">
-                                <span class="client-stat-value"><?= (int) $homeCounters["web-solutions"] ?></span>
-                                <span class="client-stat-label">Web Solutions</span>
-                            </div>
-                            <div class="client-stat-item">
-                                <span class="client-stat-value"><?= (int) $homeCounters["mobile-applications"] ?></span>
-                                <span class="client-stat-label">Mobile Apps</span>
-                            </div>
-                            <div class="client-stat-item">
-                                <span class="client-stat-value"><?= (int) $homeCounters["software-development"] ?></span>
-                                <span class="client-stat-label">Software</span>
-                            </div>
-                            <div class="client-stat-item highlight-stat">
-                                <span class="client-stat-value">$<?= number_format((float) $homeCounters["today_revenue"], 2) ?></span>
-                                <span class="client-stat-label">Today's Revenue</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="client-logo-grid">
-                        <?php if (!$clientLogos): ?>
-                            <div class="client-logo-empty">No client logos yet. Add clients from the admin panel.</div>
-                        <?php else: ?>
-                            <?php foreach ($clientLogos as $client): ?>
-                                <a class="client-logo-card"
-                                   href="<?= htmlspecialchars((string) $client["company_website"]) ?>"
-                                   target="_blank"
-                                   rel="noopener noreferrer"
-                                   title="<?= htmlspecialchars((string) $client["company_name"]) ?>">
-                                    <div class="client-logo-card-inner">
-                                        <img src="<?= htmlspecialchars((string) $client["logo_path"]) ?>"
-                                             alt="<?= htmlspecialchars((string) $client["company_name"]) ?> logo"
-                                             loading="lazy">
-                                    </div>
+        <?php if ($homeLeadership): ?>
+        <section class="home-leadership" aria-labelledby="home-leadership-heading">
+            <div class="home-leadership__inner">
+                <h2 id="home-leadership-heading" class="home-leadership__heading">Our leadership</h2>
+                <p class="home-leadership__sub">The people behind InfersioAI.</p>
+                <div class="home-leadership__grid">
+                    <?php foreach ($homeLeadership as $member): ?>
+                        <?php
+                        $imgSrc = (string) ($member["image_url"] ?? "");
+                        $profile = trim((string) ($member["profile_link"] ?? ""));
+                        $hasProfile = $profile !== "" && $profile !== "#";
+                        ?>
+                        <article class="home-leadership__card">
+                            <?php if ($hasProfile): ?>
+                                <a
+                                    class="home-leadership__photo"
+                                    href="<?= htmlspecialchars($profile) ?>"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    aria-label="<?= htmlspecialchars((string) $member["name"]) ?> — profile"
+                                >
+                                    <img src="<?= htmlspecialchars($imgSrc) ?>" alt="" loading="lazy" decoding="async">
                                 </a>
-                            <?php endforeach; ?>
+                            <?php else: ?>
+                                <div class="home-leadership__photo">
+                                    <img src="<?= htmlspecialchars($imgSrc) ?>" alt="" loading="lazy" decoding="async">
+                                </div>
+                            <?php endif; ?>
+                            <h3 class="home-leadership__name"><?= htmlspecialchars((string) $member["name"]) ?></h3>
+                            <p class="home-leadership__role"><?= htmlspecialchars((string) $member["role"]) ?></p>
+                        </article>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+        </section>
+        <?php endif; ?>
+
+        <section class="home-project-cta" aria-label="Project inquiry">
+            <div class="home-project-cta__inner">
+                <h2 class="home-project-cta__title">HAVE A PROJECT?</h2>
+                <div class="home-project-cta__divider" aria-hidden="true">
+                    <span class="home-project-cta__line"></span>
+                    <span class="home-project-cta__chevron">⌄</span>
+                    <span class="home-project-cta__line"></span>
+                </div>
+                <p class="home-project-cta__text">Our experts deliver innovative, secure, and scalable solutions.</p>
+                <a href="contact.php" class="home-project-cta__button">Request a call-back</a>
+            </div>
+        </section>
+
+        <section id="home-comments" class="home-comments" aria-label="Comments">
+            <div
+                id="home-comments-marquee"
+                class="home-comments__marquee-section"
+                aria-label="Client testimonials"
+                <?= $homeComments ? "" : "hidden" ?>
+            >
+                <h2 class="home-comments__marquee-heading">What people say</h2>
+                <div class="home-comments__marquee">
+                    <div class="home-comments__track">
+                        <?php if ($homeComments): ?>
+                            <?php for ($commentDup = 0; $commentDup < 2; $commentDup++): ?>
+                                <div class="home-comments__strip"<?= $commentDup ? ' aria-hidden="true"' : "" ?>>
+                                    <?php foreach ($homeComments as $item): ?>
+                                        <article class="home-comments__card">
+                                            <blockquote class="home-comments__quote">
+                                                <?= nl2br(htmlspecialchars($item["comment_text"])) ?>
+                                            </blockquote>
+                                            <footer class="home-comments__meta">
+                                                <strong><?= htmlspecialchars($item["name"]) ?></strong>
+                                                <span class="home-comments__company"><?= htmlspecialchars($item["company"]) ?></span>
+                                            </footer>
+                                        </article>
+                                    <?php endforeach; ?>
+                                </div>
+                            <?php endfor; ?>
                         <?php endif; ?>
                     </div>
                 </div>
             </div>
-        </section>
 
-        <section id="about" class="section about-slide">
-            <div class="section-inner">
-            <div class="container">
-                <div class="project-cta premium-cta">
-                    <span class="premium-cta-badge">Get Started</span>
-                    <h2 class="premium-cta-title">Let’s Build Something <span class="gradient-text">Intelligent</span></h2>
-                    <div class="premium-cta-line" aria-hidden="true"></div>
-                    <p class="premium-cta-description">
-                        Partner with InfersioAI to design and develop intelligent systems that scale with your business.
-                    </p>
-                    <a class="premium-cta-btn" href="contact.php">Start Your Project</a>
+            <div class="home-comments__inner">
+                <?php if (!$homeComments): ?>
+                    <p class="home-comments__empty">Be the first to share your experience with Infersio AI.</p>
+                <?php endif; ?>
+
+                <div class="home-comments__form-wrap">
+                    <h2 class="home-comments__heading">Leave a comment</h2>
+                    <p class="home-comments__sub">Tell us about your project or experience.</p>
+
+                    <p id="home-comment-flash" class="home-comments__flash" role="status" hidden></p>
+
+                    <form id="home-comment-form" class="home-comments__form" method="post" action="submit-comment.php" novalidate>
+                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION["comment_csrf"]) ?>">
+
+                        <label class="home-comments__field">
+                            <span>Name</span>
+                            <input type="text" name="name" required maxlength="120" autocomplete="name">
+                        </label>
+
+                        <label class="home-comments__field">
+                            <span>Company</span>
+                            <input type="text" name="company" required maxlength="180" autocomplete="organization">
+                        </label>
+
+                        <label class="home-comments__field">
+                            <span>Comment</span>
+                            <textarea name="comment" rows="4" required maxlength="2000" placeholder="Your message…"></textarea>
+                        </label>
+
+                        <button type="submit" class="home-comments__submit">Submit comment</button>
+                    </form>
                 </div>
-            </div>
-            </div>
-        </section>
-
-        <section id="review" class="section review-slide" aria-label="Add a review">
-            <div class="section-inner">
-                <div class="container review-strip-inner">
-                    <div class="review-robot-wrap">
-                        <div id="review-robot-container" class="review-robot-container" aria-label="Review robot viewer"></div>
-                    </div>
-                    <div class="review-card">
-                        <h3>Add a Review</h3>
-                        <p>Rate your experience with InfersioAI.</p>
-                        <div class="star-rating" id="starRating" role="radiogroup" aria-label="Star rating">
-                            <button type="button" class="star-btn" data-rating="1" aria-label="1 star">★</button>
-                            <button type="button" class="star-btn" data-rating="2" aria-label="2 stars">★</button>
-                            <button type="button" class="star-btn" data-rating="3" aria-label="3 stars">★</button>
-                            <button type="button" class="star-btn" data-rating="4" aria-label="4 stars">★</button>
-                            <button type="button" class="star-btn" data-rating="5" aria-label="5 stars">★</button>
-                        </div>
-                        <div id="ratingText" class="rating-text">Select a star rating</div>
-                        <label for="reviewComment" class="review-comment-label">Comment</label>
-                        <textarea id="reviewComment" class="review-comment" rows="4" placeholder="Share your feedback..."></textarea>
-                        <button type="button" id="reviewSubmitBtn" class="cta-btn review-submit-btn">Submit Review</button>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <section id="contact" class="section footer-slide" aria-label="Footer">
-            <div class="section-inner">
-            <footer class="site-footer" aria-label="Footer">
-            <div class="container footer-social-container">
-                <div class="footer-social-top">
-                    <h2 class="footer-social-title">CHECK OUT OUR SOCIAL HANDLES</h2>
-                    <div class="footer-social-decor" aria-hidden="true">
-                        <span class="footer-social-line"></span>
-                        <span class="footer-social-v">∨</span>
-                        <span class="footer-social-line"></span>
-                    </div>
-
-                    <div class="footer-social-icons">
-                        <a class="social-item" href="https://www.linkedin.com/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">
-                            <span class="social-pill"><span class="social-icon">in</span></span>
-                            <span class="social-label">LinkedIn</span>
-                        </a>
-                        <a class="social-item" href="https://www.facebook.com/" target="_blank" rel="noopener noreferrer" aria-label="Facebook">
-                            <span class="social-pill"><span class="social-icon">f</span></span>
-                            <span class="social-label">Facebook</span>
-                        </a>
-                        <a class="social-item" href="https://www.instagram.com/" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
-                            <span class="social-pill"><span class="social-icon">ig</span></span>
-                            <span class="social-label">Instagram</span>
-                        </a>
-                        <a class="social-item" href="https://twitter.com/" target="_blank" rel="noopener noreferrer" aria-label="X">
-                            <span class="social-pill"><span class="social-icon">X</span></span>
-                            <span class="social-label">X</span>
-                        </a>
-                        <a class="social-item" href="https://www.youtube.com/" target="_blank" rel="noopener noreferrer" aria-label="YouTube">
-                            <span class="social-pill"><span class="social-icon">▶</span></span>
-                            <span class="social-label">YouTube</span>
-                        </a>
-                    </div>
-
-                    <div class="footer-brand">
-                        <div class="footer-brand-name">INFERSIOAI</div>
-                        <div class="footer-brand-tagline">Leveraging technology to empower humanity.</div>
-                    </div>
-                </div>
-
-                <div class="footer-social-bottom">
-                    <div class="footer-bottom-left">
-                        © <?= date("Y") ?> InfersioAI. All rights reserved.
-                        <a class="footer-privacy" href="#privacy" onclick="return false;">Privacy Policy</a>
-                    </div>
-                    <div class="footer-bottom-right">
-                        <a class="footer-contact" href="mailto:sales@infersioai.com">sales@infersioai.com</a>
-                        <span class="footer-dot">•</span>
-                        <span class="footer-contact">Phone: +94 707 023 213</span>
-                        <a class="footer-backtop" href="#home" aria-label="Back to top">↑</a>
-                    </div>
-                </div>
-            </div>
-        </footer>
             </div>
         </section>
     </main>
 
-    <script src="services.js"></script>
-    <script src="script.js"></script>
+    <?php require __DIR__ . '/includes/site-footer.php'; ?>
 
-    <!-- Three.js (non-module CDN) -->
-    <script src="https://unpkg.com/three@0.126.0/build/three.min.js"></script>
-    <script src="https://unpkg.com/three@0.126.0/examples/js/loaders/GLTFLoader.js"></script>
-    <script src="https://unpkg.com/three@0.126.0/examples/js/controls/OrbitControls.js"></script>
-    <script src="robot-viewer.js"></script>
-    <script>
-        // Second renderer for the service-slide robot canvas
-        window.ROBOT_CONTAINER_ID = "service-robot-container";
-        window.ROBOT_ASSISTANT_KEY = "serviceRobotAssistant";
-        window.ROBOT_READY_EVENT = "service-robot-ready";
-    </script>
-    <script src="robot-viewer.js"></script>
-    <script>
-        // Third renderer for review strip robot
-        window.ROBOT_CONTAINER_ID = "review-robot-container";
-        window.ROBOT_ASSISTANT_KEY = "reviewRobotAssistant";
-        window.ROBOT_READY_EVENT = "review-robot-ready";
-    </script>
-    <script src="robot-viewer.js"></script>
-    <script src="review.js"></script>
+    <script src="home.js"></script>
 </body>
 </html>

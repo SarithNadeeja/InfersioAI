@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . "/../includes/admin_auth.php";
+require_once __DIR__ . "/../includes/admin_layout.php";
 
 $user = admin_require_login();
 if (!empty($user["must_change_password"])) {
@@ -159,48 +160,29 @@ $okMap = [
 if (!empty($_GET["ok"]) && isset($okMap[$_GET["ok"]])) {
     $ok = $okMap[$_GET["ok"]];
 }
+admin_page_start("Clients", "clients");
+admin_page_header("Clients", "Add client name, logo, and website — shown on the homepage and About page.");
 ?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Client Manager - InfersioAI</title>
-    <link rel="stylesheet" href="admin.css">
-</head>
-<body>
-    <div class="app">
-        <aside class="sidebar">
-            <div class="brand">InfersioAI Admin</div>
-            <a class="nav-link" href="index.php">Dashboard</a>
-            <a class="nav-link active" href="clients.php">Client Manager</a>
-            <a class="nav-link" href="team.php">Team (About)</a>
-            <a class="nav-link" href="projects.php?service=ai-solutions">AI Solutions</a>
-            <a class="nav-link" href="projects.php?service=web-solutions">Web Solutions</a>
-            <a class="nav-link" href="projects.php?service=mobile-applications">Mobile Applications</a>
-            <a class="nav-link" href="projects.php?service=software-development">Software Development</a>
-            <a class="nav-link" href="logout.php">Logout</a>
-        </aside>
-        <main class="content">
+
             <div class="card">
-                <h2><?= $editing ? "Edit Client" : "Add Client" ?></h2>
+                <h2><?= $editing ? "Edit client" : "Add client" ?></h2>
                 <?php if ($error): ?><div class="msg"><?= htmlspecialchars($error) ?></div><?php endif; ?>
-                <?php if ($ok): ?><div style="margin-bottom:10px;color:#86efac;"><?= htmlspecialchars($ok) ?></div><?php endif; ?>
+                <?php if ($ok): ?><div class="alert-success"><?= htmlspecialchars($ok) ?></div><?php endif; ?>
                 <form method="post" enctype="multipart/form-data">
                     <input type="hidden" name="id" value="<?= $editing ? (int) $editing["id"] : 0 ?>">
                     <div class="grid">
                         <div>
-                            <label for="company_name">Client Company Name</label>
+                            <label for="company_name">Client name</label>
                             <input id="company_name" name="company_name" type="text" required value="<?= htmlspecialchars((string) ($editing["company_name"] ?? "")) ?>">
                         </div>
                         <div>
-                            <label for="company_website">Client Company Website</label>
-                            <input id="company_website" name="company_website" type="url" required value="<?= htmlspecialchars((string) ($editing["company_website"] ?? "")) ?>">
+                            <label for="company_website">Client website</label>
+                            <input id="company_website" name="company_website" type="url" required placeholder="https://example.com" value="<?= htmlspecialchars((string) ($editing["company_website"] ?? "")) ?>">
                         </div>
                     </div>
-                    <label for="logo">Client Company Logo <?= $editing ? "(optional to replace)" : "" ?></label>
+                    <label for="logo">Client logo <?= $editing ? "(optional — replace current)" : "" ?></label>
                     <input id="logo" name="logo" type="file" accept=".png,.jpg,.jpeg,.webp,.gif" <?= $editing ? "" : "required" ?>>
-                    <button class="btn" type="submit"><?= $editing ? "Update Client" : "Add Client" ?></button>
+                    <button class="btn" type="submit"><?= $editing ? "Update client" : "Add client" ?></button>
                     <?php if ($editing): ?>
                         <a class="btn btn-ghost" href="clients.php">Cancel</a>
                     <?php endif; ?>
@@ -208,20 +190,20 @@ if (!empty($_GET["ok"]) && isset($okMap[$_GET["ok"]])) {
             </div>
 
             <div class="card">
-                <h2>Manage Clients</h2>
+                <h2>All clients</h2>
                 <div class="table-wrap">
                     <table>
                         <thead>
                             <tr>
                                 <th>Logo</th>
-                                <th>Company</th>
+                                <th>Name</th>
                                 <th>Website</th>
-                                <th>Manage</th>
+                                <th></th>
                             </tr>
                         </thead>
                         <tbody>
                         <?php if (!$clients): ?>
-                            <tr><td colspan="4" class="muted">No clients added yet.</td></tr>
+                            <tr><td colspan="4" class="muted">No clients yet.</td></tr>
                         <?php else: ?>
                             <?php foreach ($clients as $c): ?>
                                 <tr>
@@ -245,7 +227,5 @@ if (!empty($_GET["ok"]) && isset($okMap[$_GET["ok"]])) {
                     </table>
                 </div>
             </div>
-        </main>
-    </div>
-</body>
-</html>
+
+<?php admin_page_end(); ?>

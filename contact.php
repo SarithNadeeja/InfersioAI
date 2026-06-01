@@ -64,6 +64,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $flashType = 'error';
     }
 }
+
+$navCurrent = "contact";
 ?>
 <!DOCTYPE html>
 <html lang="en" class="contact-page">
@@ -79,60 +81,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="contact.css">
-    <link rel="stylesheet" href="premium-bw-mixed.css">
 </head>
 <body id="page-top" class="contact-page">
     <header class="site-header">
         <div class="container">
-            <a class="logo" href="index.php#home">InfersioAI</a>
+            <a class="logo" href="index.php">InfersioAI</a>
             <button class="nav-toggle" id="navToggle" aria-label="Toggle menu">Menu</button>
             <nav class="navbar" id="navbar">
-                <ul class="nav-menu">
-                    <li><a href="index.php#home">Home</a></li>
-                    <li class="has-dropdown">
-                        <a href="ai-solutions.php">AI Solutions</a>
-                        <ul class="dropdown">
-                            <li><a href="ai-chatbots.php">AI Chatbots</a></li>
-                            <li><a href="ai-automation.php">AI Automation Systems</a></li>
-                            <li><a href="ai-agents.php">AI Agents</a></li>
-                            <li><a href="ai-lead-generation.php">AI Lead Generation Systems</a></li>
-                            <li><a href="ai-content-automation.php">AI Content Automation</a></li>
-                            <li><a href="ai-security.php">AI Security / Monitoring</a></li>
-                        </ul>
-                    </li>
-                    <li class="has-dropdown">
-                        <a href="web-solutions.php">Web Solutions</a>
-                        <ul class="dropdown">
-                            <li><a href="custom-website-development.php">Custom Website Development</a></li>
-                            <li><a href="web-application-development.php">Web Application Development</a></li>
-                            <li><a href="ecommerce-solutions.php">E-Commerce Solutions</a></li>
-                            <li><a href="ui-ux-design.php">UI/UX Design &amp; Optimization</a></li>
-                            <li><a href="website-maintenance.php">Website Maintenance &amp; Support</a></li>
-                        </ul>
-                    </li>
-                    <li class="has-dropdown">
-                        <a href="mobile-applications.php">Mobile Applications</a>
-                        <ul class="dropdown">
-                            <li><a href="android-app-development.php">Android App Development</a></li>
-                            <li><a href="ios-app-development.php">iOS App Development</a></li>
-                            <li><a href="cross-platform-apps.php">Cross-Platform Apps (Flutter / React Native)</a></li>
-                            <li><a href="app-ui-ux-design.php">App UI/UX Design</a></li>
-                            <li><a href="app-maintenance.php">App Maintenance &amp; Updates</a></li>
-                        </ul>
-                    </li>
-                    <li class="has-dropdown">
-                        <a href="software-engineering.php">Software</a>
-                        <ul class="dropdown">
-                            <li><a href="desktop-application-development.php">Desktop Application Development (Windows / macOS)</a></li>
-                            <li><a href="custom-business-software.php">Custom Business Software</a></li>
-                            <li><a href="system-automation-tools.php">System Automation Tools</a></li>
-                            <li><a href="api-development.php">API Development &amp; Integration</a></li>
-                            <li><a href="cloud-software.php">Cloud-Based Software Solutions</a></li>
-                        </ul>
-                    </li>
-                    <li><a href="about.php">About Us</a></li>
-                    <li><a href="contact.php" aria-current="page">Contact</a></li>
-                </ul>
+                <?php require __DIR__ . "/includes/site-nav.php"; ?>
             </nav>
         </div>
     </header>
