@@ -4,6 +4,7 @@
 <IfModule mod_mime.c>
     AddType video/webm .webm
     AddType video/mp4 .mp4
+    AddType video/quicktime .mov
 </IfModule>
 
 # Byte-range requests let the browser buffer and play before the full file downloads.

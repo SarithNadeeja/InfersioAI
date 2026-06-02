@@ -37,6 +37,7 @@ body.home-page:not(.is-loading):not(.home-page--scrollable) {
     overflow: hidden;
     height: 100vh;
     height: 100dvh;
+    overscroll-behavior: none;
 }
 
 body.home-page.home-page--scrollable {
@@ -471,52 +472,41 @@ body.home-page--after-video .hero-banner__media {
         radial-gradient(ellipse 80% 50% at 50% 50%, transparent 40%, rgba(0, 0, 0, 0.25) 100%);
 }
 
-.hero-banner__entry {
+body.home-page:not(.home-page--scrollable) .hero-banner {
+    touch-action: none;
+    overscroll-behavior: none;
+}
+
+.hero-banner__hint {
     position: fixed;
-    inset: 0;
-    z-index: 2;
-    display: grid;
-    place-items: center;
-    pointer-events: none;
-}
-
-.hero-banner__visit-btn {
-    pointer-events: auto;
-    min-height: 52px;
-    padding: 12px 28px;
+    left: 50%;
+    bottom: max(28px, env(safe-area-inset-bottom, 0px) + 16px);
+    z-index: 3;
+    transform: translateX(-50%);
+    margin: 0;
+    padding: 10px 18px;
     border-radius: 999px;
-    border: 1px solid rgba(255, 255, 255, 0.65);
-    background: rgba(0, 0, 0, 0.55);
-    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.45);
+    background: rgba(0, 0, 0, 0.5);
+    color: rgba(255, 255, 255, 0.92);
     font-family: "Sora", "Inter", system-ui, sans-serif;
-    font-size: 0.95rem;
-    font-weight: 700;
-    letter-spacing: 0.05em;
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
     text-transform: uppercase;
-    cursor: pointer;
-    transition: transform 0.2s ease, background 0.2s ease, opacity 0.2s ease;
-}
-
-.hero-banner__visit-btn:hover {
-    transform: translateY(-2px);
-    background: rgba(0, 0, 0, 0.75);
-}
-
-.hero-banner__visit-btn:focus-visible {
-    outline: 2px solid #fff;
-    outline-offset: 3px;
-}
-
-.hero-banner__visit-btn.is-hidden {
-    opacity: 0;
     pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.35s ease;
 }
 
-body.home-page--intro-playing .hero-banner__entry {
+.hero-banner__hint.is-visible {
+    opacity: 1;
+}
+
+body.home-page--intro-playing .hero-banner__hint,
+body.home-page--after-video .hero-banner__hint {
     opacity: 0;
     visibility: hidden;
-    pointer-events: none;
-    transition: none;
 }
 
 body.home-page--scrollable .hero-banner__shade {
@@ -525,10 +515,6 @@ body.home-page--scrollable .hero-banner__shade {
 }
 
 body.home-page--after-video .hero-banner__shade {
-    display: none;
-}
-
-body.home-page--after-video .hero-banner__entry {
     display: none;
 }
 

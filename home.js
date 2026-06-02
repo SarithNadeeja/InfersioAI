@@ -5,6 +5,9 @@
     /** Empty white tail at end of banner.webm — stop before this */
     const BANNER_TAIL_TRIM_SEC = 1;
     const BANNER_SERVICES_ZOOM_MS = 600;
+    const REVERSE_SEEK_FPS = 24;
+    const SWIPE_THRESHOLD_PX = 28;
+    const SWIPE_THRESHOLD_COARSE_PX = 36;
 
     function resolveAssetUrl(path) {
         try {
@@ -25,14 +28,15 @@
     const loaderPct = document.getElementById("ai-loader-pct");
     const loaderStatus = document.getElementById("ai-loader-status");
     const video = document.getElementById("banner-video");
+    const heroBanner = document.querySelector(".hero-banner");
+    const bannerScrollHint = document.getElementById("bannerScrollHint");
     const VIDEO_BANNER = (video && video.dataset.bannerSrc) || "assets/banner.webm";
+    const VIDEO_BANNER_MP4 = (video && video.dataset.bannerMp4) || "assets/banner.mp4";
     const servicesSection = document.getElementById("services");
     const serviceCards = document.querySelectorAll(".home-services__card");
     const homeNav = document.querySelector(".home-nav");
     const homeNavMenu = document.getElementById("homeNav");
     const homeNavToggle = document.getElementById("homeNavToggle");
-    const visitWebsiteBtn = document.getElementById("visitWebsiteBtn");
-
     const statusLines = [
         "Calibrating neural mesh…",
         "Syncing vision models…",
@@ -91,18 +95,43 @@
         });
     }
 
+    function preferProgressiveBannerLoad() {
+        return (
+            window.matchMedia("(pointer: coarse)").matches ||
+            /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)
+        );
+    }
+
+    function bufferedEndSec(targetVideo) {
+        try {
+            const ranges = targetVideo.buffered;
+            if (!ranges.length) return 0;
+            let end = 0;
+            for (let i = 0; i < ranges.length; i += 1) {
+                end = Math.max(end, ranges.end(i));
+            }
+            return end;
+        } catch {
+            return 0;
+        }
+    }
+
     function isVideoFullyBuffered(targetVideo) {
         if (!targetVideo) return false;
         if (targetVideo.readyState >= 4) return true;
         const dur = targetVideo.duration;
         if (!Number.isFinite(dur) || dur <= 0) return false;
-        try {
-            const ranges = targetVideo.buffered;
-            if (!ranges.length) return false;
-            return ranges.end(ranges.length - 1) >= dur - 0.35;
-        } catch {
-            return false;
-        }
+        return bufferedEndSec(targetVideo) >= dur - 0.35;
+    }
+
+    function isBannerReadyToInteract(targetVideo) {
+        if (!targetVideo) return false;
+        if (isVideoFullyBuffered(targetVideo)) return true;
+        if (!preferProgressiveBannerLoad()) return false;
+        const dur = targetVideo.duration;
+        if (!Number.isFinite(dur) || dur <= 0) return false;
+        if (targetVideo.readyState < 3) return false;
+        return bufferedEndSec(targetVideo) >= dur * 0.9;
     }
 
     function waitForVideoCanPlayThrough(targetVideo) {
@@ -128,18 +157,18 @@
             };
 
             const onProgress = () => {
-                if (isVideoFullyBuffered(targetVideo)) {
+                if (isBannerReadyToInteract(targetVideo)) {
                     finish();
                 }
             };
 
-            if (isVideoFullyBuffered(targetVideo)) {
+            if (isBannerReadyToInteract(targetVideo)) {
                 finish();
                 return;
             }
 
             const timeoutId = setTimeout(() => {
-                if (isVideoFullyBuffered(targetVideo) || targetVideo.readyState >= 3) {
+                if (isBannerReadyToInteract(targetVideo)) {
                     finish();
                     return;
                 }
@@ -193,7 +222,8 @@
             }
 
             if (onProgress) onProgress(100);
-            const blob = new Blob(chunks, { type: "video/webm" });
+            const mime = response.headers.get("content-type") || "video/webm";
+            const blob = new Blob(chunks, { type: mime.split(";")[0] });
             return URL.createObjectURL(blob);
         } finally {
             clearTimeout(timeoutId);
@@ -207,27 +237,123 @@
         targetVideo.load();
     }
 
+    function getBannerFetchUrl() {
+        if (!video) return resolveAssetUrl(VIDEO_BANNER);
+        const current = video.currentSrc || video.src;
+        if (current) return current;
+        const sources = video.querySelectorAll("source");
+        for (const source of sources) {
+            const type = source.getAttribute("type") || "";
+            if (!type || video.canPlayType(type) !== "") {
+                const src = source.getAttribute("src");
+                if (src) return resolveAssetUrl(src);
+            }
+        }
+        return resolveAssetUrl(VIDEO_BANNER);
+    }
+
+    async function resolveBannerSources() {
+        if (!video) return;
+
+        const mp4Url = resolveAssetUrl(VIDEO_BANNER_MP4);
+        let useMp4 = false;
+        try {
+            const head = await fetch(mp4Url, { method: "HEAD", cache: "force-cache" });
+            useMp4 = head.ok;
+        } catch {
+            useMp4 = false;
+        }
+
+        video.querySelectorAll("source").forEach((node) => node.remove());
+
+        if (useMp4) {
+            const mp4 = document.createElement("source");
+            mp4.src = mp4Url;
+            mp4.type = "video/mp4";
+            video.appendChild(mp4);
+        }
+
+        const webm = document.createElement("source");
+        webm.src = resolveAssetUrl(VIDEO_BANNER);
+        webm.type = "video/webm";
+        video.appendChild(webm);
+    }
+
+    async function preloadBannerProgressive(onProgress) {
+        video.preload = "auto";
+        video.load();
+
+        await new Promise((resolve, reject) => {
+            const onProg = () => {
+                const dur = video.duration;
+                if (dur > 0 && onProgress) {
+                    onProgress(Math.min(100, Math.round((bufferedEndSec(video) / dur) * 100)));
+                }
+                if (isBannerReadyToInteract(video)) {
+                    cleanup();
+                    resolve();
+                }
+            };
+
+            const cleanup = () => {
+                clearTimeout(timeoutId);
+                video.removeEventListener("progress", onProg);
+                video.removeEventListener("canplaythrough", onProg);
+                video.removeEventListener("loadeddata", onProg);
+                video.removeEventListener("error", onError);
+            };
+
+            const onError = () => {
+                cleanup();
+                reject(new Error("Banner video failed to load"));
+            };
+
+            if (isBannerReadyToInteract(video)) {
+                resolve();
+                return;
+            }
+
+            const timeoutId = setTimeout(() => {
+                if (isBannerReadyToInteract(video) || video.readyState >= 3) {
+                    cleanup();
+                    resolve();
+                    return;
+                }
+                cleanup();
+                reject(new Error("Banner video load timed out"));
+            }, BANNER_FETCH_TIMEOUT_MS);
+
+            video.addEventListener("progress", onProg);
+            video.addEventListener("canplaythrough", onProg, { once: true });
+            video.addEventListener("loadeddata", onProg);
+            video.addEventListener("error", onError, { once: true });
+        });
+    }
+
     async function preloadBannerVideoFully(onProgress) {
         if (!video) return;
 
-        const url = resolveAssetUrl(VIDEO_BANNER);
+        video.muted = true;
+        video.playsInline = true;
+        video.setAttribute("playsinline", "");
+        video.setAttribute("webkit-playsinline", "");
 
-        try {
-            bannerBlobUrl = await fetchBannerAsBlob(url, onProgress);
-            mountBannerOnVideo(video, bannerBlobUrl);
-        } catch (err) {
-            console.warn("[InfersioAI] Banner blob preload failed, using progressive load:", err);
-            const source = video.querySelector("source");
-            const resolvedSrc = resolveAssetUrl(VIDEO_BANNER);
-            if (source) {
-                source.src = resolvedSrc;
-            } else {
-                video.src = resolvedSrc;
+        await resolveBannerSources();
+
+        if (preferProgressiveBannerLoad()) {
+            await preloadBannerProgressive(onProgress);
+        } else {
+            const url = getBannerFetchUrl();
+            try {
+                bannerBlobUrl = await fetchBannerAsBlob(url, onProgress);
+                mountBannerOnVideo(video, bannerBlobUrl);
+            } catch (err) {
+                console.warn("[InfersioAI] Banner blob preload failed, using progressive load:", err);
+                await preloadBannerProgressive(onProgress);
             }
-            video.load();
+            await waitForVideoCanPlayThrough(video);
         }
 
-        await waitForVideoCanPlayThrough(video);
         bannerMediaReady = true;
     }
 
@@ -438,10 +564,10 @@
         homeNav.classList.remove("is-faded");
     }
 
-    function setVisitButtonReady(isReady) {
-        if (!visitWebsiteBtn) return;
-        visitWebsiteBtn.disabled = !isReady;
-        visitWebsiteBtn.classList.toggle("is-hidden", !isReady);
+    function setBannerScrollHintVisible(isVisible) {
+        if (!bannerScrollHint) return;
+        bannerScrollHint.hidden = !isVisible;
+        bannerScrollHint.classList.toggle("is-visible", isVisible);
     }
 
     function startBannerVideo() {
@@ -450,25 +576,43 @@
 
         video.muted = true;
         video.playsInline = true;
+        video.setAttribute("playsinline", "");
+        video.setAttribute("webkit-playsinline", "");
         video.autoplay = false;
         video.loop = false;
         video.preload = "auto";
-        setVisitButtonReady(false);
+        setBannerScrollHintVisible(false);
 
         let duration = 0;
         let ready = false;
         let prepared = false;
-        /** @type {"idle" | "forward"} */
+        let controlsBound = false;
+        let reverseRaf = null;
+        let reverseLastTs = 0;
+        /** @type {"idle" | "forward" | "reverse"} */
         let mode = "idle";
+
         function isBannerAtEnd() {
             const end = duration > 0 ? Math.max(0, duration - BANNER_TAIL_TRIM_SEC) : 0;
             return end > 0 && video.currentTime >= end - 0.05;
         }
 
+        function stopReverseRaf() {
+            if (reverseRaf !== null) {
+                cancelAnimationFrame(reverseRaf);
+                reverseRaf = null;
+            }
+            reverseLastTs = 0;
+        }
+
         function setIdle() {
             mode = "idle";
+            stopReverseRaf();
             video.pause();
             video.playbackRate = BANNER_PLAYBACK_RATE;
+            if (ready && !isBannerInteractionLocked()) {
+                setBannerScrollHintVisible(true);
+            }
         }
 
         function onBannerEnded() {
@@ -479,6 +623,8 @@
             video.pause();
             video.classList.remove("is-playing");
             setIdle();
+            setBannerScrollHintVisible(false);
+            document.body.classList.remove("home-page--intro-playing");
             if (!servicesVisible) {
                 revealServicesFromBanner();
             }
@@ -486,21 +632,20 @@
 
         function beginForwardPlayback() {
             document.body.classList.add("home-page--intro-playing");
-            setVisitButtonReady(false);
+            setBannerScrollHintVisible(false);
+            stopReverseRaf();
             mode = "forward";
             video.classList.add("is-playing");
             video.playbackRate = BANNER_PLAYBACK_RATE;
             video.currentTime = 0;
-
-            const playPromise = video.play();
             fadeOutHomeNav();
 
+            const playPromise = video.play();
             if (playPromise && typeof playPromise.catch === "function") {
                 playPromise.catch(() => {
                     document.body.classList.remove("home-page--intro-playing");
                     setIdle();
                     fadeInHomeNav();
-                    if (ready) setVisitButtonReady(true);
                 });
             }
         }
@@ -524,6 +669,143 @@
             beginForwardPlayback();
         }
 
+        function reverseTick(ts) {
+            if (mode !== "reverse" || !duration) return;
+
+            if (!reverseLastTs) reverseLastTs = ts;
+            const frameGap = ts - reverseLastTs;
+            if (frameGap < 1000 / REVERSE_SEEK_FPS) {
+                reverseRaf = requestAnimationFrame(reverseTick);
+                return;
+            }
+
+            const dt = Math.min(frameGap / 1000, 0.12);
+            reverseLastTs = ts;
+
+            let next = video.currentTime - BANNER_PLAYBACK_RATE * dt;
+            if (next <= 0) {
+                video.currentTime = 0;
+                video.classList.remove("is-playing");
+                document.body.classList.remove("home-page--intro-playing");
+                setIdle();
+                fadeInHomeNav();
+                return;
+            }
+
+            video.currentTime = next;
+            reverseRaf = requestAnimationFrame(reverseTick);
+        }
+
+        function playReverse() {
+            if (!bannerMediaReady || !ready) return;
+            if (isBannerInteractionLocked()) return;
+            if (mode === "reverse") return;
+            if (video.currentTime <= 0.05) {
+                video.currentTime = 0;
+                video.pause();
+                fadeInHomeNav();
+                setBannerScrollHintVisible(true);
+                return;
+            }
+
+            document.body.classList.add("home-page--intro-playing");
+            setBannerScrollHintVisible(false);
+            fadeOutHomeNav();
+            video.pause();
+            video.playbackRate = BANNER_PLAYBACK_RATE;
+            stopReverseRaf();
+            mode = "reverse";
+            video.classList.add("is-playing");
+            reverseRaf = requestAnimationFrame(reverseTick);
+        }
+
+        function onUserScrollDown() {
+            if (isBannerInteractionLocked()) return;
+            if (isBannerAtEnd()) {
+                showServices();
+                return;
+            }
+            playForward();
+        }
+
+        function onUserScrollUp() {
+            if (isBannerInteractionLocked()) return;
+            playReverse();
+        }
+
+        function bindControls() {
+            if (controlsBound) return;
+            controlsBound = true;
+
+            const swipeThreshold = window.matchMedia("(pointer: coarse)").matches
+                ? SWIPE_THRESHOLD_COARSE_PX
+                : SWIPE_THRESHOLD_PX;
+
+            let wheelAccum = 0;
+            let wheelResetTimer = null;
+
+            window.addEventListener(
+                "wheel",
+                (e) => {
+                    if (!ready || isBannerInteractionLocked()) return;
+
+                    wheelAccum += e.deltaY;
+                    clearTimeout(wheelResetTimer);
+                    wheelResetTimer = setTimeout(() => {
+                        wheelAccum = 0;
+                    }, 140);
+
+                    if (wheelAccum > 40) {
+                        wheelAccum = 0;
+                        onUserScrollDown();
+                    } else if (wheelAccum < -40) {
+                        wheelAccum = 0;
+                        onUserScrollUp();
+                    }
+                },
+                { passive: true }
+            );
+
+            const touchTarget = heroBanner || video;
+            let touchY = 0;
+            let touchActive = false;
+
+            touchTarget.addEventListener(
+                "touchstart",
+                (e) => {
+                    if (!ready || isBannerInteractionLocked()) return;
+                    touchY = e.touches[0].clientY;
+                    touchActive = true;
+                },
+                { passive: true }
+            );
+
+            touchTarget.addEventListener(
+                "touchmove",
+                (e) => {
+                    if (!touchActive || !ready || isBannerInteractionLocked()) return;
+                    const dy = touchY - e.touches[0].clientY;
+                    if (Math.abs(dy) > 12) {
+                        e.preventDefault();
+                    }
+                },
+                { passive: false }
+            );
+
+            touchTarget.addEventListener(
+                "touchend",
+                (e) => {
+                    if (!touchActive || !ready || isBannerInteractionLocked()) return;
+                    touchActive = false;
+                    const y = e.changedTouches[0].clientY;
+                    const dy = touchY - y;
+                    if (dy > swipeThreshold) onUserScrollDown();
+                    else if (dy < -swipeThreshold) onUserScrollUp();
+                },
+                { passive: true }
+            );
+        }
+
         video.addEventListener("ended", () => {
             if (mode === "forward") {
                 onBannerEnded();
@@ -536,7 +818,7 @@
             if (prepared) return;
             if (!bannerMediaReady) return;
             if (!Number.isFinite(video.duration) || video.duration <= 0) return;
-            if (!isVideoFullyBuffered(video) && video.readyState < 4) return;
+            if (!isBannerReadyToInteract(video)) return;
 
             prepared = true;
             duration = video.duration;
@@ -546,13 +828,15 @@
             video.currentTime = 0;
             video.playbackRate = BANNER_PLAYBACK_RATE;
             fadeInHomeNav();
-            setVisitButtonReady(true);
+            setBannerScrollHintVisible(true);
+            bindControls();
         }
 
         const onMeta = () => prepareVideo();
 
         video.addEventListener("loadedmetadata", onMeta);
         video.addEventListener("canplaythrough", onMeta);
+        video.addEventListener("progress", onMeta);
 
         if (video.readyState >= 1) {
             onMeta();
@@ -561,12 +845,6 @@
         video.addEventListener("error", () => {
             console.error("[InfersioAI] Banner video failed to load");
         });
-
-        if (visitWebsiteBtn) {
-            visitWebsiteBtn.addEventListener("click", () => {
-                playForward();
-            });
-        }
     }
 
     async function runLoader() {
@@ -609,7 +887,7 @@
             if (loaderStatus) {
                 loaderStatus.textContent = "Could not load intro — check assets/banner.webm on server";
             }
-            if (video && video.readyState >= 2 && Number.isFinite(video.duration) && video.duration > 0) {
+            if (video && isBannerReadyToInteract(video)) {
                 bannerMediaReady = true;
             }
         }

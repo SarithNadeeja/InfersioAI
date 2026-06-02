@@ -125,20 +125,19 @@ if (function_exists("flush")) {
                     id="banner-video"
                     class="hero-banner__video"
                     data-banner-src="assets/banner.webm"
+                    data-banner-mp4="assets/banner.mp4"
                     muted
                     playsinline
                     webkit-playsinline
                     preload="auto"
-                    fetchpriority="high"
                     disablePictureInPicture
                 >
+                    <source src="assets/banner.mp4" type="video/mp4">
                     <source src="assets/banner.webm" type="video/webm">
                 </video>
             </div>
             <div class="hero-banner__shade" aria-hidden="true"></div>
-            <div class="hero-banner__entry">
-                <button type="button" id="visitWebsiteBtn" class="hero-banner__visit-btn is-hidden">Visit website</button>
-            </div>
+            <p class="hero-banner__hint" id="bannerScrollHint" hidden>Scroll or swipe down to begin</p>
         </section>
 
         <section id="services" class="home-services" aria-hidden="true" aria-label="Our services">

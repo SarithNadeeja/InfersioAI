@@ -50,6 +50,7 @@ If the intro works on XAMPP but stalls on Lightsail, check these in order:
 3. **Database host** — in `config/database.php`, set `host` to the Lightsail PostgreSQL endpoint. Wrong host (`127.0.0.1` with no local DB) used to delay the whole page before the browser could download the video; the homepage now loads DB content after the hero, but other pages still need a correct DB host.
 4. **Apache modules** — enable `mod_headers`, `mod_mime`, and `mod_setenvif` (or `mod_deflate`) so `.htaccess` rules apply.
 5. **File size** — re-encode `banner.webm` to a smaller file if the instance has limited bandwidth (target roughly under 5–8 MB for an intro clip).
+6. **Mobile (iPhone / iPad)** — upload **`assets/banner.mp4`** (H.264) in addition to `banner.webm`. iOS does not play WebM reliably; the site picks MP4 on phones when that file exists. Intro is started with **swipe down** or **scroll down** (no button).
 
 **Nginx** (if not Apache): add `types { video/webm webm; }`, `gzip off` for `*.webm`, and `add_header Accept-Ranges bytes;` for video locations.
 
