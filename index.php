@@ -6,23 +6,37 @@ if (empty($_SESSION["comment_csrf"])) {
     $_SESSION["comment_csrf"] = bin2hex(random_bytes(16));
 }
 
-require_once __DIR__ . "/includes/comments.php";
-require_once __DIR__ . "/includes/db.php";
-
 $homeComments = [];
 $homeClients = [];
 $homeLeadership = [];
-try {
-    $homeComments = public_visitor_comments();
-} catch (Throwable $e) {
-    $homeComments = [];
-}
-try {
-    $homeClients = public_clients();
-    $homeLeadership = public_team_members();
-} catch (Throwable $e) {
-    $homeClients = [];
-    $homeLeadership = [];
+
+/**
+ * Load DB-backed sections after hero HTML so a slow remote DB does not delay banner video download.
+ */
+function infersio_load_home_page_data(): void
+{
+    global $homeComments, $homeClients, $homeLeadership;
+
+    static $loaded = false;
+    if ($loaded) {
+        return;
+    }
+    $loaded = true;
+
+    require_once __DIR__ . "/includes/comments.php";
+
+    try {
+        $homeComments = public_visitor_comments();
+    } catch (Throwable $e) {
+        $homeComments = [];
+    }
+    try {
+        $homeClients = public_clients();
+        $homeLeadership = public_team_members();
+    } catch (Throwable $e) {
+        $homeClients = [];
+        $homeLeadership = [];
+    }
 }
 
 ?>
@@ -33,13 +47,21 @@ try {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>InfersioAI</title>
 
+    <link rel="preload" href="assets/banner.webm" as="video" type="video/webm" fetchpriority="high">
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Sora:wght@500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Sora:wght@500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Sora:wght@500;600;700&display=swap" rel="stylesheet"></noscript>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="home.css">
 </head>
 <body id="page-top" class="home-page is-loading">
+<?php
+if (function_exists("flush")) {
+    flush();
+}
+?>
     <div
         id="ai-loader"
         class="ai-loader"
@@ -104,10 +126,12 @@ try {
                 <video
                     id="banner-video"
                     class="hero-banner__video"
+                    data-banner-src="assets/banner.webm"
                     muted
                     playsinline
                     webkit-playsinline
                     preload="auto"
+                    fetchpriority="high"
                     disablePictureInPicture
                 >
                     <source src="assets/banner.webm" type="video/webm">
@@ -211,6 +235,8 @@ try {
                 </div>
             </div>
         </section>
+
+        <?php infersio_load_home_page_data(); ?>
 
         <?php if ($homeClients): ?>
         <?php

@@ -55,7 +55,7 @@ function db(): PDO
     }
 
     $c = db_config();
-    $dsn = "pgsql:host={$c['host']};port={$c['port']};dbname={$c['name']}";
+    $dsn = "pgsql:host={$c['host']};port={$c['port']};dbname={$c['name']};connect_timeout=3";
     $pdo = new PDO($dsn, $c["user"], $c["pass"], [
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,

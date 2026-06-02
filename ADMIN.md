@@ -41,6 +41,18 @@ extension=pgsql
 6. Open once: `https://your-domain/setup/install.php` — creates tables and admin user.
 7. Log in at `/admin/login.php`, then **remove or block** `/setup/`.
 
+### Homepage video feels slow only on the server
+
+If the intro works on XAMPP but stalls on Lightsail, check these in order:
+
+1. **Upload `assets/banner.webm`** — confirm the file exists on the instance (same path as local) and is not a partial FTP upload.
+2. **Deploy `.htaccess`** in the site root (included in the repo). It sets `video/webm` MIME type, `Accept-Ranges`, long cache for media, and disables gzip on `.webm` files.
+3. **Database host** — in `config/database.php`, set `host` to the Lightsail PostgreSQL endpoint. Wrong host (`127.0.0.1` with no local DB) used to delay the whole page before the browser could download the video; the homepage now loads DB content after the hero, but other pages still need a correct DB host.
+4. **Apache modules** — enable `mod_headers`, `mod_mime`, and `mod_setenvif` (or `mod_deflate`) so `.htaccess` rules apply.
+5. **File size** — re-encode `banner.webm` to a smaller file if the instance has limited bandwidth (target roughly under 5–8 MB for an intro clip).
+
+**Nginx** (if not Apache): add `types { video/webm webm; }`, `gzip off` for `*.webm`, and `add_header Accept-Ranges bytes;` for video locations.
+
 ## Local development (XAMPP)
 
 | Setting  | Typical local        |

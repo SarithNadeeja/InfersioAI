@@ -1,11 +1,25 @@
 (function () {
-    const MIN_LOADER_MS = 1400;
+    const MIN_LOADER_MS = 700;
+    const LOADER_BACKGROUND_MAX_MS = 2200;
     const BANNER_PLAYBACK_RATE = 1;
     /** Empty white tail at end of banner.webm — stop before this */
     const BANNER_TAIL_TRIM_SEC = 1;
-    const BANNER_SERVICES_ZOOM_MS = 950;
-    const REVERSE_SEEK_FPS = 24;
-    const VIDEO_BANNER = "assets/banner.webm";
+    const BANNER_SERVICES_ZOOM_MS = 600;
+
+    function resolveAssetUrl(path) {
+        try {
+            return new URL(path, document.baseURI).href;
+        } catch {
+            return path;
+        }
+    }
+
+    function shouldPrimeBannerBuffer() {
+        const conn = navigator.connection;
+        if (!conn) return true;
+        if (conn.saveData) return false;
+        return !["slow-2g", "2g"].includes(conn.effectiveType);
+    }
     const SERVICE_IMAGES = [
         "assets/ai.webp",
         "assets/development.webp",
@@ -17,6 +31,7 @@
     const loaderPct = document.getElementById("ai-loader-pct");
     const loaderStatus = document.getElementById("ai-loader-status");
     const video = document.getElementById("banner-video");
+    const VIDEO_BANNER = (video && video.dataset.bannerSrc) || "assets/banner.webm";
     const servicesSection = document.getElementById("services");
     const serviceCards = document.querySelectorAll(".home-services__card");
     const homeNav = document.querySelector(".home-nav");
@@ -36,6 +51,7 @@
     let bannerDurationSec = 0;
     let servicesRevealAnimating = false;
     let servicesRevealTimer = null;
+    let bannerVideoInitialized = false;
 
     function setProgress(value) {
         const pct = Math.min(100, Math.max(0, Math.round(value)));
@@ -82,9 +98,10 @@
     function waitForVideoElement(targetVideo, src) {
         if (!targetVideo) return Promise.resolve();
 
+        const resolvedSrc = resolveAssetUrl(src);
         const source = targetVideo.querySelector("source");
-        if (source && source.getAttribute("src") !== src) {
-            source.src = src;
+        if (source && source.getAttribute("src") !== resolvedSrc) {
+            source.src = resolvedSrc;
             targetVideo.load();
         }
 
@@ -99,14 +116,14 @@
                 done();
             };
 
-            if (targetVideo.readyState >= 3) {
+            if (targetVideo.readyState >= 2) {
                 clearTimeout(timeout);
                 resolve();
                 return;
             }
 
-            targetVideo.addEventListener("canplaythrough", onReady, { once: true });
             targetVideo.addEventListener("loadeddata", onReady, { once: true });
+            targetVideo.addEventListener("canplay", onReady, { once: true });
             targetVideo.addEventListener("error", onReady, { once: true });
             if (source) {
                 targetVideo.load();
@@ -328,7 +345,8 @@
     }
 
     function startBannerVideo() {
-        if (!video) return;
+        if (!video || bannerVideoInitialized) return;
+        bannerVideoInitialized = true;
 
         video.muted = true;
         video.playsInline = true;
@@ -340,27 +358,15 @@
         let duration = 0;
         let ready = false;
         let prepared = false;
-        /** @type {"idle" | "forward" | "reverse"} */
+        /** @type {"idle" | "forward"} */
         let mode = "idle";
-        let reverseRaf = null;
-        let reverseLastTs = 0;
-
         function isBannerAtEnd() {
             const end = duration > 0 ? Math.max(0, duration - BANNER_TAIL_TRIM_SEC) : 0;
             return end > 0 && video.currentTime >= end - 0.05;
         }
 
-        function stopReverseRaf() {
-            if (reverseRaf !== null) {
-                cancelAnimationFrame(reverseRaf);
-                reverseRaf = null;
-            }
-            reverseLastTs = 0;
-        }
-
         function setIdle() {
             mode = "idle";
-            stopReverseRaf();
             video.pause();
             video.playbackRate = BANNER_PLAYBACK_RATE;
         }
@@ -378,135 +384,60 @@
             }
         }
 
+        function beginForwardPlayback() {
+            document.body.classList.add("home-page--intro-playing");
+            setVisitButtonReady(false);
+            mode = "forward";
+            video.classList.add("is-playing");
+            video.playbackRate = BANNER_PLAYBACK_RATE;
+
+            if (video.currentTime < 0.05 || video.currentTime >= duration - BANNER_TAIL_TRIM_SEC) {
+                video.currentTime = 0;
+            }
+
+            const playPromise = video.play();
+            fadeOutHomeNav();
+
+            if (playPromise && typeof playPromise.catch === "function") {
+                playPromise.catch(() => {
+                    document.body.classList.remove("home-page--intro-playing");
+                    setIdle();
+                    fadeInHomeNav();
+                    if (ready) setVisitButtonReady(true);
+                });
+            }
+        }
+
         function playForward() {
-            if (!ready || !duration) return;
             if (isBannerInteractionLocked()) return;
             if (mode === "forward") return;
+
+            if (!duration && Number.isFinite(video.duration) && video.duration > 0) {
+                duration = video.duration;
+                bannerDurationSec = duration;
+            }
+            if (!duration) return;
+
             if (isBannerAtEnd()) {
                 revealServicesFromBanner();
                 return;
             }
 
-            setVisitButtonReady(false);
-            fadeOutHomeNav();
-            stopReverseRaf();
-            mode = "forward";
-            video.classList.add("is-playing");
-            video.playbackRate = BANNER_PLAYBACK_RATE;
-
-            const playPromise = video.play();
-            if (playPromise && typeof playPromise.catch === "function") {
-                playPromise.catch(() => {
-                    setIdle();
-                    fadeInHomeNav();
-                });
-            }
-        }
-
-        function reverseTick(ts) {
-            if (mode !== "reverse" || !duration) return;
-
-            if (!reverseLastTs) reverseLastTs = ts;
-            const frameGap = ts - reverseLastTs;
-            if (frameGap < 1000 / REVERSE_SEEK_FPS) {
-                reverseRaf = requestAnimationFrame(reverseTick);
+            if (video.readyState < 2) {
+                const onBuffered = () => {
+                    video.removeEventListener("canplay", onBuffered);
+                    video.removeEventListener("loadeddata", onBuffered);
+                    beginForwardPlayback();
+                };
+                video.addEventListener("canplay", onBuffered, { once: true });
+                video.addEventListener("loadeddata", onBuffered, { once: true });
+                if (video.networkState === HTMLMediaElement.NETWORK_EMPTY) {
+                    video.load();
+                }
                 return;
             }
 
-            const dt = Math.min(frameGap / 1000, 0.12);
-            reverseLastTs = ts;
-
-            let next = video.currentTime - BANNER_PLAYBACK_RATE * dt;
-            if (next <= 0) {
-                video.currentTime = 0;
-                video.classList.remove("is-playing");
-                setIdle();
-                fadeInHomeNav();
-                return;
-            }
-
-            video.currentTime = next;
-            reverseRaf = requestAnimationFrame(reverseTick);
-        }
-
-        function playReverse() {
-            if (!ready || !duration) return;
-            if (mode === "reverse") return;
-            if (video.currentTime <= 0.05) {
-                video.currentTime = 0;
-                video.pause();
-                fadeInHomeNav();
-                return;
-            }
-
-            fadeOutHomeNav();
-            video.pause();
-            video.playbackRate = BANNER_PLAYBACK_RATE;
-            stopReverseRaf();
-            mode = "reverse";
-            video.classList.add("is-playing");
-            reverseRaf = requestAnimationFrame(reverseTick);
-        }
-
-        function onUserScrollDown() {
-            if (isBannerInteractionLocked()) return;
-            if (isBannerAtEnd()) {
-                showServices();
-                return;
-            }
-            playForward();
-        }
-
-        function onUserScrollUp() {
-            if (isBannerInteractionLocked()) return;
-            playReverse();
-        }
-
-        function bindControls() {
-            let wheelAccum = 0;
-            let wheelResetTimer = null;
-
-            window.addEventListener(
-                "wheel",
-                (e) => {
-                    if (!ready || isBannerInteractionLocked()) return;
-
-                    wheelAccum += e.deltaY;
-                    clearTimeout(wheelResetTimer);
-                    wheelResetTimer = setTimeout(() => {
-                        wheelAccum = 0;
-                    }, 120);
-
-                    if (wheelAccum > 40) {
-                        wheelAccum = 0;
-                        onUserScrollDown();
-                    } else if (wheelAccum < -40) {
-                        wheelAccum = 0;
-                        onUserScrollUp();
-                    }
-                },
-                { passive: true }
-            );
-
-            let touchY = 0;
-            window.addEventListener(
-                "touchstart",
-                (e) => {
-                    touchY = e.touches[0].clientY;
-                },
-                { passive: true }
-            );
-            window.addEventListener(
-                "touchend",
-                (e) => {
-                    if (!ready || isBannerInteractionLocked()) return;
-                    const y = e.changedTouches[0].clientY;
-                    const dy = touchY - y;
-                    if (dy > 12) onUserScrollDown();
-                    else if (dy < -12) onUserScrollUp();
-                },
-                { passive: true }
-            );
+            beginForwardPlayback();
         }
 
         video.addEventListener("ended", () => {
@@ -516,6 +447,35 @@
         });
 
         video.addEventListener("timeupdate", onBannerTimeUpdate);
+
+        video.addEventListener("waiting", () => {
+            if (mode !== "forward" || video.readyState >= 3) return;
+            const resumeAt = video.currentTime;
+            const onCanPlay = () => {
+                video.removeEventListener("canplay", onCanPlay);
+                if (mode === "forward" && video.paused) {
+                    video.currentTime = resumeAt;
+                    video.play().catch(() => undefined);
+                }
+            };
+            video.addEventListener("canplay", onCanPlay, { once: true });
+        });
+
+        function primeBannerBuffer() {
+            video.currentTime = 0;
+            const playAttempt = video.play();
+            if (!playAttempt || typeof playAttempt.then !== "function") {
+                video.pause();
+                video.currentTime = 0;
+                return Promise.resolve();
+            }
+            return playAttempt
+                .then(() => {
+                    video.pause();
+                    video.currentTime = 0;
+                })
+                .catch(() => undefined);
+        }
 
         function prepareVideo() {
             if (prepared) return;
@@ -528,21 +488,29 @@
             const finish = () => {
                 if (finished) return;
                 finished = true;
-                video.pause();
-                video.currentTime = 0;
-                video.playbackRate = BANNER_PLAYBACK_RATE;
                 ready = true;
                 fadeInHomeNav();
                 setVisitButtonReady(true);
+                if (shouldPrimeBannerBuffer()) {
+                    primeBannerBuffer().finally(() => {
+                        video.pause();
+                        video.currentTime = 0;
+                        video.playbackRate = BANNER_PLAYBACK_RATE;
+                    });
+                } else {
+                    video.pause();
+                    video.currentTime = 0;
+                    video.playbackRate = BANNER_PLAYBACK_RATE;
+                }
             };
 
-            if (video.readyState >= 4) {
+            if (video.readyState >= 3) {
                 finish();
                 return;
             }
 
-            video.addEventListener("canplaythrough", finish, { once: true });
-            setTimeout(finish, 8000);
+            video.addEventListener("canplay", finish, { once: true });
+            setTimeout(finish, 5000);
         }
 
         const onMeta = () => {
@@ -588,12 +556,17 @@
 
         await waitForVideoElement(video, VIDEO_BANNER);
         setProgress(58);
+        startBannerVideo();
 
-        await Promise.all(SERVICE_IMAGES.map((src) => waitForImage(src)));
-        setProgress(78);
-
-        await waitForWindowLoad();
-        setProgress(96);
+        await Promise.race([
+            Promise.all([
+                waitForFonts(),
+                Promise.all(SERVICE_IMAGES.map((src) => waitForImage(src))),
+                waitForWindowLoad(),
+            ]),
+            wait(LOADER_BACKGROUND_MAX_MS),
+        ]);
+        setProgress(92);
 
         const elapsed = performance.now() - loaderStart;
         if (elapsed < MIN_LOADER_MS) {
@@ -603,16 +576,15 @@
         setProgress(100);
         if (loaderStatus) loaderStatus.textContent = "Ready";
 
-        await wait(280);
+        await wait(120);
         clearInterval(statusTimer);
 
         loader.classList.add("is-done");
         document.body.classList.remove("is-loading");
-        startBannerVideo();
 
         setTimeout(() => {
             loader.remove();
-        }, 700);
+        }, 450);
     }
 
     function initHomeNav() {

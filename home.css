@@ -512,6 +512,13 @@ body.home-page--after-video .hero-banner__media {
     pointer-events: none;
 }
 
+body.home-page--intro-playing .hero-banner__entry {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: none;
+}
+
 body.home-page--scrollable .hero-banner__shade {
     position: absolute;
     inset: 0;
@@ -546,7 +553,7 @@ body.home-page--services-zoom-reveal .home-services.is-zoom-revealing {
     background: #ffffff;
     transform: scale(0.78);
     transform-origin: center center;
-    transition: transform 0.95s cubic-bezier(0.22, 1, 0.36, 1);
+    transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
     will-change: transform;
 }
 
