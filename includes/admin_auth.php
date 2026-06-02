@@ -107,6 +107,116 @@ function admin_username_taken(string $username, int $exceptUserId = 0): bool
     return (bool) $stmt->fetch();
 }
 
+/** @return string|null Error message, or null if valid */
+function admin_validate_username(string $username): ?string
+{
+    $username = trim($username);
+    if ($username === "") {
+        return "Username is required.";
+    }
+    if (strlen($username) < 3 || strlen($username) > 80) {
+        return "Username must be between 3 and 80 characters.";
+    }
+    if (!preg_match('/^[a-zA-Z0-9._-]+$/', $username)) {
+        return "Username may only use letters, numbers, dots, underscores, and hyphens.";
+    }
+
+    return null;
+}
+
+/** @return string|null Error message, or null if valid */
+function admin_validate_password(string $password, string $confirm = ""): ?string
+{
+    if (strlen($password) < 8) {
+        return "Password must be at least 8 characters.";
+    }
+    if ($confirm !== "" && $password !== $confirm) {
+        return "Passwords do not match.";
+    }
+
+    return null;
+}
+
+/** @return list<array{id: int, username: string, must_change_password: bool, created_at: string}> */
+function admin_list_users(): array
+{
+    bootstrap_database();
+    $pdo = db();
+    $stmt = $pdo->query(
+        "SELECT id, username, must_change_password, created_at::text AS created_at
+         FROM admin_users
+         ORDER BY id ASC"
+    );
+
+    return $stmt->fetchAll();
+}
+
+function admin_create_user(string $username, string $password): int
+{
+    $pdo = db();
+    $stmt = $pdo->prepare(
+        "INSERT INTO admin_users (username, password_hash, must_change_password)
+         VALUES (:username, :hash, FALSE)"
+    );
+    $stmt->execute([
+        "username" => trim($username),
+        "hash" => password_hash($password, PASSWORD_DEFAULT),
+    ]);
+
+    return (int) $pdo->lastInsertId();
+}
+
+function admin_update_user(int $userId, string $username, ?string $newPassword = null): void
+{
+    $pdo = db();
+    $username = trim($username);
+
+    if ($newPassword !== null && $newPassword !== "") {
+        $stmt = $pdo->prepare(
+            "UPDATE admin_users
+             SET username = :username, password_hash = :hash, must_change_password = FALSE
+             WHERE id = :id"
+        );
+        $stmt->execute([
+            "username" => $username,
+            "hash" => password_hash($newPassword, PASSWORD_DEFAULT),
+            "id" => $userId,
+        ]);
+        return;
+    }
+
+    $stmt = $pdo->prepare(
+        "UPDATE admin_users SET username = :username WHERE id = :id"
+    );
+    $stmt->execute([
+        "username" => $username,
+        "id" => $userId,
+    ]);
+}
+
+/** @return string|null Error message on failure */
+function admin_delete_user(int $userId, int $actingUserId): ?string
+{
+    if ($userId === $actingUserId) {
+        return "You cannot remove your own account while logged in.";
+    }
+
+    bootstrap_database();
+    $pdo = db();
+    $count = (int) $pdo->query("SELECT COUNT(*) FROM admin_users")->fetchColumn();
+    if ($count <= 1) {
+        return "At least one admin user must remain.";
+    }
+
+    $del = $pdo->prepare("DELETE FROM admin_users WHERE id = :id");
+    $del->execute(["id" => $userId]);
+    if ($del->rowCount() === 0) {
+        return "User not found.";
+    }
+
+    return null;
+}
+
 function admin_logout(): void
 {
     admin_session_start();

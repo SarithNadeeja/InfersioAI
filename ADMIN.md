@@ -70,6 +70,7 @@ You will be required to choose a new username and password before using the pane
 - **Clients** — logos for homepage / About
 - **Leadership** — team for homepage / About
 - **Comments** — homepage testimonials
+- **Users** — add / remove admin users; change username and password
 - **Service projects** — AI, Web, Mobile, Software categories
 
 ## Enable pdo_pgsql (XAMPP)

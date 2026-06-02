@@ -12,6 +12,8 @@ function admin_nav_items(): array
         ["key" => "clients", "label" => "Clients", "href" => "clients.php"],
         ["key" => "leadership", "label" => "Leadership", "href" => "team.php"],
         ["key" => "comments", "label" => "Comments", "href" => "comments.php"],
+        ["section" => true, "label" => "Administration"],
+        ["key" => "users", "label" => "Users", "href" => "users.php"],
         ["section" => true, "label" => "Service projects"],
         ["key" => "projects-ai", "label" => "AI Solutions", "href" => "projects.php?service=ai-solutions"],
         ["key" => "projects-web", "label" => "Web Solutions", "href" => "projects.php?service=web-solutions"],

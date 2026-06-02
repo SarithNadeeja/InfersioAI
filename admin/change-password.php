@@ -17,18 +17,14 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $newPassword = (string) ($_POST["new_password"] ?? "");
     $confirm = (string) ($_POST["confirm_password"] ?? "");
 
-    if ($newUsername === "") {
-        $error = "Username is required.";
-    } elseif (strlen($newUsername) < 3 || strlen($newUsername) > 80) {
-        $error = "Username must be between 3 and 80 characters.";
-    } elseif (!preg_match('/^[a-zA-Z0-9._-]+$/', $newUsername)) {
-        $error = "Username may only use letters, numbers, dots, underscores, and hyphens.";
+    $usernameError = admin_validate_username($newUsername);
+    $passwordError = admin_validate_password($newPassword, $confirm);
+    if ($usernameError !== null) {
+        $error = $usernameError;
     } elseif (admin_username_taken($newUsername, (int) $user["id"])) {
         $error = "That username is already in use.";
-    } elseif (strlen($newPassword) < 8) {
-        $error = "Password must be at least 8 characters.";
-    } elseif ($newPassword !== $confirm) {
-        $error = "Passwords do not match.";
+    } elseif ($passwordError !== null) {
+        $error = $passwordError;
     } elseif ($newUsername === "admin" && $newPassword === "admin") {
         $error = "Choose a different username and password than the temporary defaults.";
     } else {
