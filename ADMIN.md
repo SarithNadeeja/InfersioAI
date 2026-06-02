@@ -45,7 +45,7 @@ extension=pgsql
 
 If the intro works on XAMPP but stalls on Lightsail, check these in order:
 
-1. **Upload `assets/banner.webm`** — confirm the file exists on the instance (same path as local) and is not a partial FTP upload.
+1. **Upload `assets/banner.webm`** — confirm the file exists on the instance (same path as local) and is not a partial FTP upload. The homepage downloads the full file before showing **Visit website**; a missing or slow file keeps the loader visible or blocks instant play.
 2. **Deploy `.htaccess`** in the site root (included in the repo). It sets `video/webm` MIME type, `Accept-Ranges`, long cache for media, and disables gzip on `.webm` files.
 3. **Database host** — in `config/database.php`, set `host` to the Lightsail PostgreSQL endpoint. Wrong host (`127.0.0.1` with no local DB) used to delay the whole page before the browser could download the video; the homepage now loads DB content after the hero, but other pages still need a correct DB host.
 4. **Apache modules** — enable `mod_headers`, `mod_mime`, and `mod_setenvif` (or `mod_deflate`) so `.htaccess` rules apply.

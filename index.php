@@ -47,8 +47,6 @@ function infersio_load_home_page_data(): void
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>InfersioAI</title>
 
-    <link rel="preload" href="assets/banner.webm" as="video" type="video/webm" fetchpriority="high">
-
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Sora:wght@500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">

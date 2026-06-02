@@ -1,6 +1,6 @@
 (function () {
     const MIN_LOADER_MS = 700;
-    const LOADER_BACKGROUND_MAX_MS = 2200;
+    const BANNER_FETCH_TIMEOUT_MS = 180000;
     const BANNER_PLAYBACK_RATE = 1;
     /** Empty white tail at end of banner.webm — stop before this */
     const BANNER_TAIL_TRIM_SEC = 1;
@@ -14,12 +14,6 @@
         }
     }
 
-    function shouldPrimeBannerBuffer() {
-        const conn = navigator.connection;
-        if (!conn) return true;
-        if (conn.saveData) return false;
-        return !["slow-2g", "2g"].includes(conn.effectiveType);
-    }
     const SERVICE_IMAGES = [
         "assets/ai.webp",
         "assets/development.webp",
@@ -52,6 +46,8 @@
     let servicesRevealAnimating = false;
     let servicesRevealTimer = null;
     let bannerVideoInitialized = false;
+    let bannerMediaReady = false;
+    let bannerBlobUrl = null;
 
     function setProgress(value) {
         const pct = Math.min(100, Math.max(0, Math.round(value)));
@@ -95,40 +91,144 @@
         });
     }
 
-    function waitForVideoElement(targetVideo, src) {
+    function isVideoFullyBuffered(targetVideo) {
+        if (!targetVideo) return false;
+        if (targetVideo.readyState >= 4) return true;
+        const dur = targetVideo.duration;
+        if (!Number.isFinite(dur) || dur <= 0) return false;
+        try {
+            const ranges = targetVideo.buffered;
+            if (!ranges.length) return false;
+            return ranges.end(ranges.length - 1) >= dur - 0.35;
+        } catch {
+            return false;
+        }
+    }
+
+    function waitForVideoCanPlayThrough(targetVideo) {
         if (!targetVideo) return Promise.resolve();
 
-        const resolvedSrc = resolveAssetUrl(src);
-        const source = targetVideo.querySelector("source");
-        if (source && source.getAttribute("src") !== resolvedSrc) {
-            source.src = resolvedSrc;
-            targetVideo.load();
-        }
-
-        return new Promise((resolve) => {
-            const done = () => resolve();
-            const timeout = setTimeout(done, 15000);
-            const onReady = () => {
-                clearTimeout(timeout);
-                targetVideo.removeEventListener("canplaythrough", onReady);
-                targetVideo.removeEventListener("loadeddata", onReady);
-                targetVideo.removeEventListener("error", onReady);
-                done();
+        return new Promise((resolve, reject) => {
+            const cleanup = () => {
+                clearTimeout(timeoutId);
+                targetVideo.removeEventListener("canplaythrough", onProgress);
+                targetVideo.removeEventListener("progress", onProgress);
+                targetVideo.removeEventListener("loadeddata", onProgress);
+                targetVideo.removeEventListener("error", onError);
             };
 
-            if (targetVideo.readyState >= 2) {
-                clearTimeout(timeout);
+            const finish = () => {
+                cleanup();
                 resolve();
+            };
+
+            const onError = () => {
+                cleanup();
+                reject(new Error("Banner video failed to decode"));
+            };
+
+            const onProgress = () => {
+                if (isVideoFullyBuffered(targetVideo)) {
+                    finish();
+                }
+            };
+
+            if (isVideoFullyBuffered(targetVideo)) {
+                finish();
                 return;
             }
 
-            targetVideo.addEventListener("loadeddata", onReady, { once: true });
-            targetVideo.addEventListener("canplay", onReady, { once: true });
-            targetVideo.addEventListener("error", onReady, { once: true });
-            if (source) {
-                targetVideo.load();
-            }
+            const timeoutId = setTimeout(() => {
+                if (isVideoFullyBuffered(targetVideo) || targetVideo.readyState >= 3) {
+                    finish();
+                    return;
+                }
+                cleanup();
+                reject(new Error("Banner video load timed out"));
+            }, BANNER_FETCH_TIMEOUT_MS);
+
+            targetVideo.addEventListener("canplaythrough", onProgress, { once: true });
+            targetVideo.addEventListener("progress", onProgress);
+            targetVideo.addEventListener("loadeddata", onProgress);
+            targetVideo.addEventListener("error", onError, { once: true });
         });
+    }
+
+    async function fetchBannerAsBlob(url, onProgress) {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), BANNER_FETCH_TIMEOUT_MS);
+
+        try {
+            const response = await fetch(url, {
+                cache: "force-cache",
+                credentials: "same-origin",
+                signal: controller.signal,
+            });
+
+            if (!response.ok) {
+                throw new Error(`Banner HTTP ${response.status}`);
+            }
+
+            const total = Number(response.headers.get("content-length")) || 0;
+            const body = response.body;
+
+            if (!body || !body.getReader) {
+                const blob = await response.blob();
+                if (onProgress) onProgress(100);
+                return URL.createObjectURL(blob);
+            }
+
+            const reader = body.getReader();
+            const chunks = [];
+            let loaded = 0;
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                chunks.push(value);
+                loaded += value.length;
+                if (onProgress && total > 0) {
+                    onProgress(Math.min(100, Math.round((loaded / total) * 100)));
+                }
+            }
+
+            if (onProgress) onProgress(100);
+            const blob = new Blob(chunks, { type: "video/webm" });
+            return URL.createObjectURL(blob);
+        } finally {
+            clearTimeout(timeoutId);
+        }
+    }
+
+    function mountBannerOnVideo(targetVideo, mediaUrl) {
+        targetVideo.querySelectorAll("source").forEach((node) => node.remove());
+        targetVideo.src = mediaUrl;
+        targetVideo.preload = "auto";
+        targetVideo.load();
+    }
+
+    async function preloadBannerVideoFully(onProgress) {
+        if (!video) return;
+
+        const url = resolveAssetUrl(VIDEO_BANNER);
+
+        try {
+            bannerBlobUrl = await fetchBannerAsBlob(url, onProgress);
+            mountBannerOnVideo(video, bannerBlobUrl);
+        } catch (err) {
+            console.warn("[InfersioAI] Banner blob preload failed, using progressive load:", err);
+            const source = video.querySelector("source");
+            const resolvedSrc = resolveAssetUrl(VIDEO_BANNER);
+            if (source) {
+                source.src = resolvedSrc;
+            } else {
+                video.src = resolvedSrc;
+            }
+            video.load();
+        }
+
+        await waitForVideoCanPlayThrough(video);
+        bannerMediaReady = true;
     }
 
     function waitForImage(src) {
@@ -390,10 +490,7 @@
             mode = "forward";
             video.classList.add("is-playing");
             video.playbackRate = BANNER_PLAYBACK_RATE;
-
-            if (video.currentTime < 0.05 || video.currentTime >= duration - BANNER_TAIL_TRIM_SEC) {
-                video.currentTime = 0;
-            }
+            video.currentTime = 0;
 
             const playPromise = video.play();
             fadeOutHomeNav();
@@ -409,6 +506,7 @@
         }
 
         function playForward() {
+            if (!bannerMediaReady || !ready) return;
             if (isBannerInteractionLocked()) return;
             if (mode === "forward") return;
 
@@ -423,20 +521,6 @@
                 return;
             }
 
-            if (video.readyState < 2) {
-                const onBuffered = () => {
-                    video.removeEventListener("canplay", onBuffered);
-                    video.removeEventListener("loadeddata", onBuffered);
-                    beginForwardPlayback();
-                };
-                video.addEventListener("canplay", onBuffered, { once: true });
-                video.addEventListener("loadeddata", onBuffered, { once: true });
-                if (video.networkState === HTMLMediaElement.NETWORK_EMPTY) {
-                    video.load();
-                }
-                return;
-            }
-
             beginForwardPlayback();
         }
 
@@ -448,81 +532,30 @@
 
         video.addEventListener("timeupdate", onBannerTimeUpdate);
 
-        video.addEventListener("waiting", () => {
-            if (mode !== "forward" || video.readyState >= 3) return;
-            const resumeAt = video.currentTime;
-            const onCanPlay = () => {
-                video.removeEventListener("canplay", onCanPlay);
-                if (mode === "forward" && video.paused) {
-                    video.currentTime = resumeAt;
-                    video.play().catch(() => undefined);
-                }
-            };
-            video.addEventListener("canplay", onCanPlay, { once: true });
-        });
-
-        function primeBannerBuffer() {
-            video.currentTime = 0;
-            const playAttempt = video.play();
-            if (!playAttempt || typeof playAttempt.then !== "function") {
-                video.pause();
-                video.currentTime = 0;
-                return Promise.resolve();
-            }
-            return playAttempt
-                .then(() => {
-                    video.pause();
-                    video.currentTime = 0;
-                })
-                .catch(() => undefined);
-        }
-
         function prepareVideo() {
             if (prepared) return;
+            if (!bannerMediaReady) return;
             if (!Number.isFinite(video.duration) || video.duration <= 0) return;
+            if (!isVideoFullyBuffered(video) && video.readyState < 4) return;
+
             prepared = true;
             duration = video.duration;
             bannerDurationSec = duration;
-
-            let finished = false;
-            const finish = () => {
-                if (finished) return;
-                finished = true;
-                ready = true;
-                fadeInHomeNav();
-                setVisitButtonReady(true);
-                if (shouldPrimeBannerBuffer()) {
-                    primeBannerBuffer().finally(() => {
-                        video.pause();
-                        video.currentTime = 0;
-                        video.playbackRate = BANNER_PLAYBACK_RATE;
-                    });
-                } else {
-                    video.pause();
-                    video.currentTime = 0;
-                    video.playbackRate = BANNER_PLAYBACK_RATE;
-                }
-            };
-
-            if (video.readyState >= 3) {
-                finish();
-                return;
-            }
-
-            video.addEventListener("canplay", finish, { once: true });
-            setTimeout(finish, 5000);
+            ready = true;
+            video.pause();
+            video.currentTime = 0;
+            video.playbackRate = BANNER_PLAYBACK_RATE;
+            fadeInHomeNav();
+            setVisitButtonReady(true);
         }
 
-        const onMeta = () => {
-            if (video.readyState >= 1) prepareVideo();
-        };
+        const onMeta = () => prepareVideo();
 
-        video.addEventListener("loadedmetadata", onMeta, { once: true });
+        video.addEventListener("loadedmetadata", onMeta);
+        video.addEventListener("canplaythrough", onMeta);
 
         if (video.readyState >= 1) {
             onMeta();
-        } else {
-            video.load();
         }
 
         video.addEventListener("error", () => {
@@ -539,6 +572,12 @@
     async function runLoader() {
         if (!loader) {
             document.body.classList.remove("is-loading");
+            try {
+                if (loaderStatus) loaderStatus.textContent = "Loading intro video…";
+                await preloadBannerVideoFully();
+            } catch (e) {
+                console.error("[InfersioAI] Banner preload failed:", e);
+            }
             startBannerVideo();
             return;
         }
@@ -549,24 +588,37 @@
 
         setProgress(8);
         await waitForStylesheet();
-        setProgress(22);
+        setProgress(12);
 
-        await waitForFonts();
-        setProgress(42);
+        if (loaderStatus) {
+            loaderStatus.textContent = "Loading intro video…";
+        }
 
-        await waitForVideoElement(video, VIDEO_BANNER);
-        setProgress(58);
+        const backgroundAssets = Promise.all([
+            waitForFonts(),
+            Promise.all(SERVICE_IMAGES.map((src) => waitForImage(src))),
+            waitForWindowLoad(),
+        ]).catch(() => undefined);
+
+        try {
+            await preloadBannerVideoFully((downloadPct) => {
+                setProgress(12 + downloadPct * 0.8);
+            });
+        } catch (e) {
+            console.error("[InfersioAI] Banner preload failed:", e);
+            if (loaderStatus) {
+                loaderStatus.textContent = "Could not load intro — check assets/banner.webm on server";
+            }
+            if (video && video.readyState >= 2 && Number.isFinite(video.duration) && video.duration > 0) {
+                bannerMediaReady = true;
+            }
+        }
+
+        setProgress(94);
         startBannerVideo();
 
-        await Promise.race([
-            Promise.all([
-                waitForFonts(),
-                Promise.all(SERVICE_IMAGES.map((src) => waitForImage(src))),
-                waitForWindowLoad(),
-            ]),
-            wait(LOADER_BACKGROUND_MAX_MS),
-        ]);
-        setProgress(92);
+        await backgroundAssets;
+        setProgress(98);
 
         const elapsed = performance.now() - loaderStart;
         if (elapsed < MIN_LOADER_MS) {
@@ -737,6 +789,11 @@
         initServicesEffects();
         initHomeCommentForm();
         window.addEventListener("scroll", syncServicesNavTheme, { passive: true });
+        window.addEventListener("pagehide", () => {
+            if (bannerBlobUrl) {
+                URL.revokeObjectURL(bannerBlobUrl);
+            }
+        });
         runLoader();
     }
 })();
