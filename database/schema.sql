@@ -1,6 +1,7 @@
 -- InfersioAI PostgreSQL schema
--- Database: infersioai
--- Run via setup/install.php or psql manually.
+-- Database: infersioai_db
+-- User: infersioai_user
+-- Run via setup/install.php after Lightsail database is created.
 
 CREATE TABLE IF NOT EXISTS admin_users (
     id SERIAL PRIMARY KEY,

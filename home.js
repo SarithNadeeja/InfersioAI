@@ -1,6 +1,9 @@
 (function () {
     const MIN_LOADER_MS = 1400;
     const BANNER_PLAYBACK_RATE = 1;
+    /** Empty white tail at end of banner.webm — stop before this */
+    const BANNER_TAIL_TRIM_SEC = 1;
+    const BANNER_SERVICES_ZOOM_MS = 950;
     const REVERSE_SEEK_FPS = 24;
     const VIDEO_BANNER = "assets/banner.webm";
     const SERVICE_IMAGES = [
@@ -29,6 +32,9 @@
     let statusIndex = 0;
     let statusTimer = null;
     let servicesVisible = false;
+    let bannerDurationSec = 0;
+    let servicesRevealAnimating = false;
+    let servicesRevealTimer = null;
 
     function setProgress(value) {
         const pct = Math.min(100, Math.max(0, Math.round(value)));
@@ -184,20 +190,116 @@
         requestParallaxUpdate();
     }
 
-    function showServices() {
+    function getEffectiveBannerEnd() {
+        if (!Number.isFinite(bannerDurationSec) || bannerDurationSec <= 0) {
+            return 0;
+        }
+        return Math.max(0, bannerDurationSec - BANNER_TAIL_TRIM_SEC);
+    }
+
+    function prefersReducedMotion() {
+        return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    }
+
+    function finalizeServicesReveal() {
         if (!servicesSection || servicesVisible) return;
         servicesVisible = true;
+        servicesRevealAnimating = false;
+
+        if (servicesRevealTimer !== null) {
+            clearTimeout(servicesRevealTimer);
+            servicesRevealTimer = null;
+        }
+
+        if (video) {
+            const end = getEffectiveBannerEnd();
+            if (end > 0) {
+                video.currentTime = end;
+            }
+            video.pause();
+            video.classList.remove("is-playing");
+        }
+
+        servicesSection.classList.remove("is-zoom-revealing", "is-zoom-reveal-active");
         servicesSection.classList.add("is-visible");
         servicesSection.setAttribute("aria-hidden", "false");
-        enablePageScroll();
+        document.body.classList.remove("home-page--services-zoom-reveal");
         document.body.classList.add("home-page--after-video");
         document.body.classList.add("home-page--services");
+        enablePageScroll();
         fadeInHomeNav();
 
         requestAnimationFrame(() => {
             window.scrollTo({ top: 0, behavior: "auto" });
             syncServicesNavTheme();
         });
+    }
+
+    function revealServicesFromBanner() {
+        if (!servicesSection || servicesVisible || servicesRevealAnimating) return;
+
+        const end = getEffectiveBannerEnd();
+        if (video) {
+            video.pause();
+            if (end > 0) {
+                video.currentTime = end;
+            }
+            video.classList.remove("is-playing");
+        }
+
+        if (prefersReducedMotion()) {
+            finalizeServicesReveal();
+            return;
+        }
+
+        servicesRevealAnimating = true;
+        document.body.classList.add("home-page--services-zoom-reveal");
+        enablePageScroll();
+        servicesSection.setAttribute("aria-hidden", "false");
+        servicesSection.classList.add("is-zoom-revealing");
+        servicesSection.classList.remove("is-visible");
+
+        const finishReveal = () => {
+            if (servicesVisible) return;
+            finalizeServicesReveal();
+        };
+
+        const onZoomEnd = (event) => {
+            if (event.target !== servicesSection || event.propertyName !== "transform") return;
+            servicesSection.removeEventListener("transitionend", onZoomEnd);
+            finishReveal();
+        };
+
+        servicesSection.addEventListener("transitionend", onZoomEnd);
+
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                servicesSection.classList.add("is-zoom-reveal-active");
+            });
+        });
+
+        servicesRevealTimer = window.setTimeout(() => {
+            servicesRevealTimer = null;
+            servicesSection.removeEventListener("transitionend", onZoomEnd);
+            finishReveal();
+        }, BANNER_SERVICES_ZOOM_MS);
+    }
+
+    function showServices() {
+        revealServicesFromBanner();
+    }
+
+    function isBannerInteractionLocked() {
+        return servicesVisible || servicesRevealAnimating;
+    }
+
+    function onBannerTimeUpdate() {
+        if (!video || isBannerInteractionLocked()) return;
+        const end = getEffectiveBannerEnd();
+        if (end <= 0) return;
+        if (video.currentTime >= end - 0.04) {
+            revealServicesFromBanner();
+        }
     }
 
     function closeHomeNavMenu() {
@@ -236,7 +338,8 @@
         let reverseLastTs = 0;
 
         function isBannerAtEnd() {
-            return duration > 0 && video.currentTime >= duration - 0.05;
+            const end = duration > 0 ? Math.max(0, duration - BANNER_TAIL_TRIM_SEC) : 0;
+            return end > 0 && video.currentTime >= end - 0.05;
         }
 
         function stopReverseRaf() {
@@ -255,22 +358,24 @@
         }
 
         function onBannerEnded() {
-            if (Number.isFinite(duration) && duration > 0) {
-                video.currentTime = duration;
+            const end = duration > 0 ? Math.max(0, duration - BANNER_TAIL_TRIM_SEC) : 0;
+            if (end > 0) {
+                video.currentTime = end;
             }
             video.pause();
             video.classList.remove("is-playing");
             setIdle();
-            showServices();
+            if (!servicesVisible) {
+                revealServicesFromBanner();
+            }
         }
 
         function playForward() {
             if (!ready || !duration) return;
-            if (servicesVisible) return;
+            if (isBannerInteractionLocked()) return;
             if (mode === "forward") return;
             if (isBannerAtEnd()) {
-                video.currentTime = duration;
-                onBannerEnded();
+                revealServicesFromBanner();
                 return;
             }
 
@@ -335,7 +440,7 @@
         }
 
         function onUserScrollDown() {
-            if (servicesVisible) return;
+            if (isBannerInteractionLocked()) return;
             if (isBannerAtEnd()) {
                 showServices();
                 return;
@@ -344,7 +449,7 @@
         }
 
         function onUserScrollUp() {
-            if (servicesVisible) return;
+            if (isBannerInteractionLocked()) return;
             playReverse();
         }
 
@@ -355,7 +460,7 @@
             window.addEventListener(
                 "wheel",
                 (e) => {
-                    if (!ready || servicesVisible) return;
+                    if (!ready || isBannerInteractionLocked()) return;
 
                     wheelAccum += e.deltaY;
                     clearTimeout(wheelResetTimer);
@@ -385,7 +490,7 @@
             window.addEventListener(
                 "touchend",
                 (e) => {
-                    if (!ready || servicesVisible) return;
+                    if (!ready || isBannerInteractionLocked()) return;
                     const y = e.changedTouches[0].clientY;
                     const dy = touchY - y;
                     if (dy > 12) onUserScrollDown();
@@ -401,11 +506,14 @@
             }
         });
 
+        video.addEventListener("timeupdate", onBannerTimeUpdate);
+
         function prepareVideo() {
             if (prepared) return;
             if (!Number.isFinite(video.duration) || video.duration <= 0) return;
             prepared = true;
             duration = video.duration;
+            bannerDurationSec = duration;
 
             let finished = false;
             const finish = () => {
@@ -519,7 +627,7 @@
                 if (video) {
                     const dur = video.duration;
                     if (Number.isFinite(dur) && dur > 0) {
-                        video.currentTime = dur;
+                        video.currentTime = Math.max(0, dur - BANNER_TAIL_TRIM_SEC);
                         video.pause();
                     }
                 }

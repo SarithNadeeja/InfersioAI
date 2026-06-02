@@ -454,7 +454,6 @@ body.home-page--after-video .hero-banner__media {
     visibility: visible;
     transform: translateZ(0);
     backface-visibility: hidden;
-    transition: opacity 0.45s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .hero-banner__video.is-playing {
@@ -479,6 +478,39 @@ body.home-page--scrollable .hero-banner__shade {
 
 body.home-page--after-video .hero-banner__shade {
     display: none;
+}
+
+/* Services zoom-in after banner (video timing unchanged; content scales onto screen) */
+body.home-page--services-zoom-reveal {
+    overflow: hidden;
+}
+
+body.home-page--services-zoom-reveal .hero-banner__media,
+body.home-page--services-zoom-reveal .hero-banner__shade {
+    display: none;
+}
+
+body.home-page--services-zoom-reveal .home-services.is-zoom-revealing {
+    position: fixed;
+    inset: 0;
+    z-index: 2;
+    width: 100%;
+    min-height: 100vh;
+    min-height: 100dvh;
+    margin: 0;
+    background: #ffffff;
+    transform: scale(0.78);
+    transform-origin: center center;
+    transition: transform 0.95s cubic-bezier(0.22, 1, 0.36, 1);
+    will-change: transform;
+}
+
+body.home-page--services-zoom-reveal .home-services.is-zoom-revealing.is-zoom-reveal-active {
+    transform: scale(1);
+}
+
+body.home-page--services-zoom-reveal.home-page--scrollable .site-main--fullscreen {
+    overflow: hidden;
 }
 
 .home-page .site-main--fullscreen {
@@ -1077,6 +1109,11 @@ body.home-page--scrollable .home-services {
 }
 
 @media (prefers-reduced-motion: reduce) {
+    body.home-page--services-zoom-reveal .home-services.is-zoom-revealing {
+        transition: none;
+        transform: none;
+    }
+
     .home-services__card {
         opacity: 1;
         transform: none;

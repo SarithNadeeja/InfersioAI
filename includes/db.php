@@ -6,9 +6,9 @@ function db_config(): array
     $defaults = [
         "host" => "127.0.0.1",
         "port" => "5432",
-        "name" => "infersioai",
-        "user" => "postgres",
-        "pass" => "1234",
+        "name" => "infersioai_db",
+        "user" => "infersioai_user",
+        "pass" => "",
     ];
 
     $file = __DIR__ . "/../config/database.php";
@@ -16,6 +16,14 @@ function db_config(): array
         $fromFile = require $file;
         if (is_array($fromFile)) {
             $defaults = array_merge($defaults, $fromFile);
+        }
+    }
+
+    $localFile = __DIR__ . "/../config/database.local.php";
+    if (is_file($localFile)) {
+        $fromLocal = require $localFile;
+        if (is_array($fromLocal)) {
+            $defaults = array_merge($defaults, $fromLocal);
         }
     }
 
@@ -167,12 +175,32 @@ function reset_admin_credentials(?PDO $pdo = null): void
 function ensure_database_exists(): void
 {
     $c = db_config();
-    $pdo = db_connect_server();
-    $safeName = preg_replace('/[^a-zA-Z0-9_]/', '', $c["name"]) ?: "infersioai";
-    $exists = $pdo->prepare("SELECT 1 FROM pg_database WHERE datname = :name");
-    $exists->execute(["name" => $safeName]);
-    if (!$exists->fetchColumn()) {
-        $pdo->exec('CREATE DATABASE "' . str_replace('"', '""', $safeName) . '"');
+    $safeName = preg_replace('/[^a-zA-Z0-9_]/', '', $c["name"]) ?: "infersioai_db";
+
+    try {
+        $dsn = "pgsql:host={$c['host']};port={$c['port']};dbname={$safeName}";
+        $test = new PDO($dsn, $c["user"], $c["pass"], [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
+        unset($test);
+        return;
+    } catch (Throwable) {
+        // Target database not reachable — try to create (local dev / superuser only).
+    }
+
+    try {
+        $pdo = db_connect_server();
+        $exists = $pdo->prepare("SELECT 1 FROM pg_database WHERE datname = :name");
+        $exists->execute(["name" => $safeName]);
+        if (!$exists->fetchColumn()) {
+            $pdo->exec('CREATE DATABASE "' . str_replace('"', '""', $safeName) . '"');
+        }
+    } catch (Throwable $e) {
+        throw new RuntimeException(
+            'Cannot connect to database "' . $safeName . '". On AWS Lightsail, create the database '
+            . 'and user in the console first, then set host/user/password in config/database.php. '
+            . $e->getMessage(),
+            0,
+            $e
+        );
     }
 }
 
