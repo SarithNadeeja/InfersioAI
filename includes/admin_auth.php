@@ -44,6 +44,39 @@ function admin_require_login(): array
     return $user;
 }
 
+function admin_is_bootstrap_credentials(string $username, string $password): bool
+{
+    return strtolower(trim($username)) === "admin" && $password === "admin";
+}
+
+function admin_is_setup_complete(): bool
+{
+    bootstrap_database();
+    $pdo = db();
+    $stmt = $pdo->query(
+        "SELECT 1 FROM admin_users WHERE must_change_password = FALSE LIMIT 1"
+    );
+
+    return (bool) $stmt->fetchColumn();
+}
+
+/** Remove leftover admin/admin rows after initial setup (legacy bug). */
+function admin_purge_stale_bootstrap_users(?PDO $pdo = null): void
+{
+    $pdo = $pdo ?? db();
+    $setupDone = (bool) $pdo->query(
+        "SELECT 1 FROM admin_users WHERE must_change_password = FALSE LIMIT 1"
+    )->fetchColumn();
+    if (!$setupDone) {
+        return;
+    }
+
+    $pdo->exec(
+        "DELETE FROM admin_users
+         WHERE username = 'admin' AND must_change_password = TRUE"
+    );
+}
+
 function admin_attempt_login(string $username, string $password): ?array
 {
     bootstrap_database();
@@ -54,7 +87,7 @@ function admin_attempt_login(string $username, string $password): ?array
          WHERE username = :username
          LIMIT 1"
     );
-    $stmt->execute(["username" => $username]);
+    $stmt->execute(["username" => trim($username)]);
     $user = $stmt->fetch();
     if (!$user) {
         return null;
@@ -62,6 +95,15 @@ function admin_attempt_login(string $username, string $password): ?array
 
     if (!password_verify($password, $user["password_hash"])) {
         return null;
+    }
+
+    if (admin_is_bootstrap_credentials($username, $password)) {
+        if (admin_is_setup_complete()) {
+            return null;
+        }
+        if (!(bool) $user["must_change_password"]) {
+            return null;
+        }
     }
 
     admin_session_start();
@@ -91,6 +133,8 @@ function admin_complete_initial_setup(int $userId, string $newUsername, string $
         "hash" => $hash,
         "id" => $userId,
     ]);
+
+    admin_purge_stale_bootstrap_users($pdo);
 }
 
 function admin_username_taken(string $username, int $exceptUserId = 0): bool
@@ -153,6 +197,10 @@ function admin_list_users(): array
 
 function admin_create_user(string $username, string $password): int
 {
+    if (admin_is_setup_complete() && strtolower(trim($username)) === "admin") {
+        throw new InvalidArgumentException("The username admin is reserved for the one-time setup account only.");
+    }
+
     $pdo = db();
     $stmt = $pdo->prepare(
         "INSERT INTO admin_users (username, password_hash, must_change_password)
@@ -168,8 +216,12 @@ function admin_create_user(string $username, string $password): int
 
 function admin_update_user(int $userId, string $username, ?string $newPassword = null): void
 {
-    $pdo = db();
     $username = trim($username);
+    if (admin_is_setup_complete() && strtolower($username) === "admin") {
+        throw new InvalidArgumentException("The username admin is reserved and cannot be used after setup.");
+    }
+
+    $pdo = db();
 
     if ($newPassword !== null && $newPassword !== "") {
         $stmt = $pdo->prepare(

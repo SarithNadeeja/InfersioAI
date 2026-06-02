@@ -11,6 +11,7 @@ if (!empty($currentUser["must_change_password"])) {
 }
 
 bootstrap_database();
+admin_purge_stale_bootstrap_users();
 $pdo = db();
 
 $currentId = (int) $currentUser["id"];
@@ -51,9 +52,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         } elseif ($username === "admin" && $password === "admin") {
             $error = "Do not use the temporary default admin / admin credentials.";
         } else {
-            admin_create_user($username, $password);
-            header("Location: users.php?ok=added");
-            exit;
+            try {
+                admin_create_user($username, $password);
+                header("Location: users.php?ok=added");
+                exit;
+            } catch (InvalidArgumentException $e) {
+                $error = $e->getMessage();
+            }
         }
     } elseif ($action === "update" && $id > 0) {
         if ($password !== "" || $confirm !== "") {
@@ -61,18 +66,26 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             if ($passwordError !== null) {
                 $error = $passwordError;
             } else {
-                admin_update_user($id, $username, $password);
-                if ($id === $currentId) {
-                    admin_session_start();
-                    $_SESSION["admin_user_id"] = $currentId;
+                try {
+                    admin_update_user($id, $username, $password);
+                    if ($id === $currentId) {
+                        admin_session_start();
+                        $_SESSION["admin_user_id"] = $currentId;
+                    }
+                    header("Location: users.php?ok=updated");
+                    exit;
+                } catch (InvalidArgumentException $e) {
+                    $error = $e->getMessage();
                 }
-                header("Location: users.php?ok=updated");
-                exit;
             }
         } else {
-            admin_update_user($id, $username, null);
-            header("Location: users.php?ok=updated");
-            exit;
+            try {
+                admin_update_user($id, $username, null);
+                header("Location: users.php?ok=updated");
+                exit;
+            } catch (InvalidArgumentException $e) {
+                $error = $e->getMessage();
+            }
         }
     } else {
         $error = "Invalid request.";
@@ -204,7 +217,13 @@ admin_page_header("Admin users", "Add, remove, and update usernames and password
                                     <td>
                                         <div class="row-actions">
                                             <a class="btn btn-ghost" href="users.php?edit=<?= (int) $row["id"] ?>">Edit</a>
-                                            <?php if ((int) $row["id"] !== $currentId): ?>
+                                            <?php
+                                            $isBootstrapRow = (string) $row["username"] === "admin"
+                                                && !empty($row["must_change_password"]);
+                                            $canDelete = (int) $row["id"] !== $currentId
+                                                && (!$isBootstrapRow || admin_is_setup_complete());
+                                            ?>
+                                            <?php if ($canDelete): ?>
                                                 <a
                                                     class="btn btn-danger"
                                                     href="users.php?delete=<?= (int) $row["id"] ?>"

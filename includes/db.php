@@ -133,15 +133,19 @@ function bootstrap_database(): void
     );
 
     seed_admin_user_if_missing($pdo);
+    admin_purge_stale_bootstrap_users($pdo);
 }
 
+/**
+ * Create default admin/admin only when the table is empty (first install).
+ * Do not re-create "admin" after the first account is renamed during setup.
+ */
 function seed_admin_user_if_missing(?PDO $pdo = null): void
 {
     $pdo = $pdo ?? db();
 
-    $stmt = $pdo->prepare("SELECT id FROM admin_users WHERE username = :username LIMIT 1");
-    $stmt->execute(["username" => "admin"]);
-    if ($stmt->fetch()) {
+    $count = (int) $pdo->query("SELECT COUNT(*) FROM admin_users")->fetchColumn();
+    if ($count > 0) {
         return;
     }
 
@@ -155,21 +159,12 @@ function seed_admin_user_if_missing(?PDO $pdo = null): void
     ]);
 }
 
-/** Run from setup/install.php only — resets one-time default admin/admin login. */
+/** Run from setup/install.php only — single bootstrap admin/admin (one-time login). */
 function reset_admin_credentials(?PDO $pdo = null): void
 {
     $pdo = $pdo ?? db();
-    $upsert = $pdo->prepare(
-        "INSERT INTO admin_users (username, password_hash, must_change_password)
-         VALUES (:username, :hash, TRUE)
-         ON CONFLICT (username) DO UPDATE SET
-            password_hash = EXCLUDED.password_hash,
-            must_change_password = TRUE"
-    );
-    $upsert->execute([
-        "username" => "admin",
-        "hash" => password_hash("admin", PASSWORD_DEFAULT),
-    ]);
+    $pdo->exec("DELETE FROM admin_users");
+    seed_admin_user_if_missing($pdo);
 }
 
 function ensure_database_exists(): void
