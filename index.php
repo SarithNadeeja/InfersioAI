@@ -114,6 +114,9 @@ try {
                 </video>
             </div>
             <div class="hero-banner__shade" aria-hidden="true"></div>
+            <div class="hero-banner__entry">
+                <button type="button" id="visitWebsiteBtn" class="hero-banner__visit-btn is-hidden">Visit website</button>
+            </div>
         </section>
 
         <section id="services" class="home-services" aria-hidden="true" aria-label="Our services">

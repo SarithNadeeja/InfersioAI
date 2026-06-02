@@ -22,6 +22,7 @@
     const homeNav = document.querySelector(".home-nav");
     const homeNavMenu = document.getElementById("homeNav");
     const homeNavToggle = document.getElementById("homeNavToggle");
+    const visitWebsiteBtn = document.getElementById("visitWebsiteBtn");
 
     const statusLines = [
         "Calibrating neural mesh…",
@@ -320,6 +321,12 @@
         homeNav.classList.remove("is-faded");
     }
 
+    function setVisitButtonReady(isReady) {
+        if (!visitWebsiteBtn) return;
+        visitWebsiteBtn.disabled = !isReady;
+        visitWebsiteBtn.classList.toggle("is-hidden", !isReady);
+    }
+
     function startBannerVideo() {
         if (!video) return;
 
@@ -328,6 +335,7 @@
         video.autoplay = false;
         video.loop = false;
         video.preload = "auto";
+        setVisitButtonReady(false);
 
         let duration = 0;
         let ready = false;
@@ -379,6 +387,7 @@
                 return;
             }
 
+            setVisitButtonReady(false);
             fadeOutHomeNav();
             stopReverseRaf();
             mode = "forward";
@@ -524,7 +533,7 @@
                 video.playbackRate = BANNER_PLAYBACK_RATE;
                 ready = true;
                 fadeInHomeNav();
-                bindControls();
+                setVisitButtonReady(true);
             };
 
             if (video.readyState >= 4) {
@@ -551,6 +560,12 @@
         video.addEventListener("error", () => {
             console.error("[InfersioAI] Banner video failed to load");
         });
+
+        if (visitWebsiteBtn) {
+            visitWebsiteBtn.addEventListener("click", () => {
+                playForward();
+            });
+        }
     }
 
     async function runLoader() {
