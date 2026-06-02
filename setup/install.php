@@ -23,7 +23,7 @@ if (!extension_loaded("pdo_pgsql")) {
         $steps[] = "Tables created or verified.";
 
         reset_admin_credentials();
-        $steps[] = "Admin login: username admin, password admin.";
+        $steps[] = "Sign in at /admin/login.php and set your permanent admin username and password.";
 
         $lockDir = __DIR__ . "/../storage";
         if (!is_dir($lockDir)) {

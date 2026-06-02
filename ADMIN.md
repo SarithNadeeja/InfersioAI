@@ -57,12 +57,12 @@ Use `config/database.local.php` for local-only passwords.
 2. Open: `http://localhost/InfersioAI/setup/install.php` (or your deployed URL).
 3. When setup succeeds, open: `/admin/login.php`
 
-**Default login** (reset on each `setup/install.php` run)
+**First login only** (after `setup/install.php` resets credentials)
 
-- Username: `admin`
-- Password: `admin`
+- Temporary username: `admin`
+- Temporary password: `admin`
 
-Change the password immediately after first login.
+You will be required to choose a new username and password before using the panel. After that, `admin` / `admin` no longer works.
 
 ## Admin features
 

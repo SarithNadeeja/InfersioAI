@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS admin_users (
     id SERIAL PRIMARY KEY,
     username VARCHAR(80) NOT NULL UNIQUE,
     password_hash TEXT NOT NULL,
-    must_change_password BOOLEAN NOT NULL DEFAULT FALSE,
+    must_change_password BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 

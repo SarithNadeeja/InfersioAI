@@ -147,7 +147,7 @@ function seed_admin_user_if_missing(?PDO $pdo = null): void
 
     $insert = $pdo->prepare(
         "INSERT INTO admin_users (username, password_hash, must_change_password)
-         VALUES (:username, :hash, FALSE)"
+         VALUES (:username, :hash, TRUE)"
     );
     $insert->execute([
         "username" => "admin",
@@ -155,16 +155,16 @@ function seed_admin_user_if_missing(?PDO $pdo = null): void
     ]);
 }
 
-/** Run from setup/install.php only — resets default admin credentials. */
+/** Run from setup/install.php only — resets one-time default admin/admin login. */
 function reset_admin_credentials(?PDO $pdo = null): void
 {
     $pdo = $pdo ?? db();
     $upsert = $pdo->prepare(
         "INSERT INTO admin_users (username, password_hash, must_change_password)
-         VALUES (:username, :hash, FALSE)
+         VALUES (:username, :hash, TRUE)
          ON CONFLICT (username) DO UPDATE SET
             password_hash = EXCLUDED.password_hash,
-            must_change_password = FALSE"
+            must_change_password = TRUE"
     );
     $upsert->execute([
         "username" => "admin",

@@ -45,7 +45,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && $dbError === "") {
     <div class="auth-wrap">
         <form class="auth-card" method="post" autocomplete="off">
             <h1>InfersioAI Admin</h1>
-            <p>First login: <span class="muted">admin / admin</span></p>
+            <p class="muted">Sign in to manage the website.</p>
             <?php if ($error): ?>
                 <div class="msg"><?= htmlspecialchars($error) ?></div>
             <?php endif; ?>

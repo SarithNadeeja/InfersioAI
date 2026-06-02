@@ -74,19 +74,37 @@ function admin_attempt_login(string $username, string $password): ?array
     ];
 }
 
-function admin_force_password_change(int $userId, string $newPassword): void
+function admin_complete_initial_setup(int $userId, string $newUsername, string $newPassword): void
 {
     $pdo = db();
+    $newUsername = trim($newUsername);
     $hash = password_hash($newPassword, PASSWORD_DEFAULT);
     $stmt = $pdo->prepare(
         "UPDATE admin_users
-         SET password_hash = :hash, must_change_password = FALSE
+         SET username = :username,
+             password_hash = :hash,
+             must_change_password = FALSE
          WHERE id = :id"
     );
     $stmt->execute([
+        "username" => $newUsername,
         "hash" => $hash,
         "id" => $userId,
     ]);
+}
+
+function admin_username_taken(string $username, int $exceptUserId = 0): bool
+{
+    $pdo = db();
+    $stmt = $pdo->prepare(
+        "SELECT id FROM admin_users WHERE username = :username AND id <> :id LIMIT 1"
+    );
+    $stmt->execute([
+        "username" => trim($username),
+        "id" => $exceptUserId,
+    ]);
+
+    return (bool) $stmt->fetch();
 }
 
 function admin_logout(): void
