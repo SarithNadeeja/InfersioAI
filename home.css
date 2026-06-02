@@ -355,6 +355,11 @@ body.home-page.is-loading .home-nav {
     transition: width 0.25s ease-out;
 }
 
+/* Desktop: real download % — no width tween (avoids bar crawling 1% at a time) */
+.ai-loader__bar--snap {
+    transition: none;
+}
+
 .ai-loader__pct {
     font-variant-numeric: tabular-nums;
     font-size: 0.75rem;

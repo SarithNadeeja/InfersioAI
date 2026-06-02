@@ -330,6 +330,7 @@
         });
     }
 
+    /** Mobile / touch — progressive buffer (do not change without mobile QA). */
     async function preloadBannerVideoFully(onProgress) {
         if (!video) return;
 
@@ -339,21 +340,34 @@
         video.setAttribute("webkit-playsinline", "");
 
         await resolveBannerSources();
+        await preloadBannerProgressive(onProgress);
+        bannerMediaReady = true;
+    }
 
-        if (preferProgressiveBannerLoad()) {
-            await preloadBannerProgressive(onProgress);
-        } else {
-            const url = getBannerFetchUrl();
-            try {
-                bannerBlobUrl = await fetchBannerAsBlob(url, onProgress);
-                mountBannerOnVideo(video, bannerBlobUrl);
-            } catch (err) {
-                console.warn("[InfersioAI] Banner blob preload failed, using progressive load:", err);
-                await preloadBannerProgressive(onProgress);
-            }
+    /** Desktop — full file fetch + blob; progress snaps to real download % */
+    async function preloadBannerVideoDesktop(onProgress) {
+        if (!video) return;
+
+        video.muted = true;
+        video.playsInline = true;
+        video.setAttribute("playsinline", "");
+        video.setAttribute("webkit-playsinline", "");
+
+        await resolveBannerSources();
+
+        const url = getBannerFetchUrl();
+        try {
+            bannerBlobUrl = await fetchBannerAsBlob(url, onProgress);
+            mountBannerOnVideo(video, bannerBlobUrl);
             await waitForVideoCanPlayThrough(video);
+        } catch (err) {
+            console.warn("[InfersioAI] Banner blob preload failed, using progressive load:", err);
+            await preloadBannerProgressive(onProgress);
         }
 
+        if (onProgress) {
+            onProgress(100);
+        }
         bannerMediaReady = true;
     }
 
@@ -851,8 +865,11 @@
         if (!loader) {
             document.body.classList.remove("is-loading");
             try {
-                if (loaderStatus) loaderStatus.textContent = "Loading intro video…";
-                await preloadBannerVideoFully();
+                if (preferProgressiveBannerLoad()) {
+                    await preloadBannerVideoFully();
+                } else {
+                    await preloadBannerVideoDesktop();
+                }
             } catch (e) {
                 console.error("[InfersioAI] Banner preload failed:", e);
             }
@@ -878,36 +895,83 @@
             waitForWindowLoad(),
         ]).catch(() => undefined);
 
+        if (preferProgressiveBannerLoad()) {
+            try {
+                await preloadBannerVideoFully((downloadPct) => {
+                    setProgress(12 + downloadPct * 0.8);
+                });
+            } catch (e) {
+                console.error("[InfersioAI] Banner preload failed:", e);
+                if (loaderStatus) {
+                    loaderStatus.textContent = "Could not load intro — check assets/banner.webm on server";
+                }
+                if (video && isBannerReadyToInteract(video)) {
+                    bannerMediaReady = true;
+                }
+            }
+
+            setProgress(94);
+            startBannerVideo();
+
+            await backgroundAssets;
+            setProgress(98);
+
+            const elapsed = performance.now() - loaderStart;
+            if (elapsed < MIN_LOADER_MS) {
+                await wait(MIN_LOADER_MS - elapsed);
+            }
+
+            setProgress(100);
+            if (loaderStatus) loaderStatus.textContent = "Ready";
+
+            await wait(120);
+            clearInterval(statusTimer);
+
+            loader.classList.add("is-done");
+            document.body.classList.remove("is-loading");
+
+            setTimeout(() => {
+                loader.remove();
+            }, 450);
+            return;
+        }
+
+        if (loaderBar) {
+            loaderBar.classList.add("ai-loader__bar--snap");
+        }
+
+        let lastDesktopProgress = -1;
+        const onDesktopDownloadProgress = (downloadPct) => {
+            const mapped = Math.min(99, Math.round(12 + downloadPct * 0.87));
+            if (mapped <= lastDesktopProgress) return;
+            lastDesktopProgress = mapped;
+            setProgress(mapped);
+        };
+
         try {
-            await preloadBannerVideoFully((downloadPct) => {
-                setProgress(12 + downloadPct * 0.8);
-            });
+            await preloadBannerVideoDesktop(onDesktopDownloadProgress);
         } catch (e) {
             console.error("[InfersioAI] Banner preload failed:", e);
             if (loaderStatus) {
                 loaderStatus.textContent = "Could not load intro — check assets/banner.webm on server";
             }
-            if (video && isBannerReadyToInteract(video)) {
+            if (video && isVideoFullyBuffered(video)) {
                 bannerMediaReady = true;
             }
         }
 
-        setProgress(94);
+        setProgress(100);
         startBannerVideo();
+        backgroundAssets;
 
-        await backgroundAssets;
-        setProgress(98);
-
-        const elapsed = performance.now() - loaderStart;
-        if (elapsed < MIN_LOADER_MS) {
-            await wait(MIN_LOADER_MS - elapsed);
+        if (loaderStatus) {
+            loaderStatus.textContent = "Ready";
         }
 
-        setProgress(100);
-        if (loaderStatus) loaderStatus.textContent = "Ready";
-
-        await wait(120);
         clearInterval(statusTimer);
+        if (loaderBar) {
+            loaderBar.classList.remove("ai-loader__bar--snap");
+        }
 
         loader.classList.add("is-done");
         document.body.classList.remove("is-loading");
