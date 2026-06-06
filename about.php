@@ -23,7 +23,11 @@ $teamMembers = public_team_members();
     <link rel="stylesheet" href="about.css">
 </head>
 <body id="page-top" class="about-page">
-    <header class="site-header">
+    <div class="about-bg" aria-hidden="true">
+        <img class="about-bg__image" src="assets/aboutus.webp" alt="" decoding="async">
+    </div>
+
+    <header class="site-header site-header--dark">
         <div class="container">
             <a class="logo" href="index.php">InfersioAI</a>
             <button class="nav-toggle" id="navToggle" aria-label="Toggle menu">Menu</button>
@@ -44,9 +48,6 @@ $teamMembers = public_team_members();
                     </p>
                     <p class="about-hero-founded">Founded in 2026</p>
                 </div>
-                <div class="about-hero-visual about-reveal" style="--about-reveal-delay: 80ms">
-                    <img src="assets/aboutus.png" alt="" width="1200" height="900" decoding="async">
-                </div>
             </div>
         </section>
 
@@ -60,9 +61,6 @@ $teamMembers = public_team_members();
                             mobile applications, and software engineering. We design and build intelligent systems that help businesses
                             automate operations, improve efficiency, and scale effectively.
                         </p>
-                    </div>
-                    <div class="about-overview-visual about-reveal" style="--about-reveal-delay: 120ms">
-                        <img src="assets/whoweare.png" alt="" width="960" height="720" loading="lazy" decoding="async">
                     </div>
                 </div>
             </div>
@@ -242,19 +240,7 @@ $teamMembers = public_team_members();
         </div>
     </footer>
 
-    <div id="ai-about-robot-container" class="ai-page-robot" aria-hidden="true"></div>
-
     <script src="script.js"></script>
     <script src="about.js"></script>
-
-    <script src="https://unpkg.com/three@0.126.0/build/three.min.js"></script>
-    <script src="https://unpkg.com/three@0.126.0/examples/js/loaders/GLTFLoader.js"></script>
-    <script src="https://unpkg.com/three@0.126.0/examples/js/controls/OrbitControls.js"></script>
-    <script>
-        window.ROBOT_CONTAINER_ID = "ai-about-robot-container";
-        window.ROBOT_ASSISTANT_KEY = "aboutPageRobotAssistant";
-        window.ROBOT_READY_EVENT = "ai-about-robot-ready";
-    </script>
-    <script src="robot-viewer.js"></script>
 </body>
 </html>

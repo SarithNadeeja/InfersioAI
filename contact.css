@@ -1,4 +1,4 @@
-/* Contact page — orelit-style: black hero, gray form column, red info column */
+/* Contact page — black hero, gray form column, blue info column */
 
 html.contact-page {
     scroll-padding-top: var(--site-header-h);
@@ -62,7 +62,7 @@ body#page-top.contact-page {
 }
 
 .contact-info-panel {
-    background: #e30613;
+    background: linear-gradient(165deg, #0f172a 0%, #1e3a5f 48%, #1e40af 100%);
     padding: clamp(40px, 6vw, 72px) clamp(28px, 5vw, 64px);
     box-sizing: border-box;
     color: #ffffff;
@@ -195,7 +195,7 @@ body#page-top.contact-page {
     transform: scale(0.99);
 }
 
-/* Red panel: info blocks */
+/* Blue panel: info blocks */
 .contact-info-block h3 {
     font-family: "Sora", "Inter", system-ui, sans-serif;
     font-weight: 700;

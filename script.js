@@ -447,6 +447,10 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function initMobileFloatingBot() {
+        if (document.body.classList.contains("about-page")) {
+            return;
+        }
+
         document.querySelectorAll(".mobile-floating-bot").forEach((el) => {
             el.classList.remove("mobile-floating-bot");
         });

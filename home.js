@@ -17,6 +17,7 @@
         }
     }
 
+    const MOBILE_BANNER_IMAGE = "assets/mobilebanner.webp";
     const SERVICE_IMAGES = [
         "assets/ai.webp",
         "assets/development.webp",
@@ -28,6 +29,7 @@
     const loaderPct = document.getElementById("ai-loader-pct");
     const loaderStatus = document.getElementById("ai-loader-status");
     const video = document.getElementById("banner-video");
+    const mobileBannerImage = document.querySelector(".hero-banner__mobile-image");
     const heroBanner = document.querySelector(".hero-banner");
     const bannerScrollHint = document.getElementById("bannerScrollHint");
     const VIDEO_BANNER = (video && video.dataset.bannerSrc) || "assets/banner.webm";
@@ -95,11 +97,111 @@
         });
     }
 
-    function preferProgressiveBannerLoad() {
+    function isMobileHomeExperience() {
         return (
             window.matchMedia("(pointer: coarse)").matches ||
             /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)
         );
+    }
+
+    function preferProgressiveBannerLoad() {
+        return isMobileHomeExperience();
+    }
+
+    function blockIntroVideoOnMobile() {
+        if (!isMobileHomeExperience() || !video) return;
+        video.preload = "none";
+        video.querySelectorAll("source").forEach((node) => node.remove());
+        video.removeAttribute("src");
+        video.load();
+    }
+
+    blockIntroVideoOnMobile();
+
+    let mobileBannerBlobUrl = null;
+    let mobileNavThemeObserver = null;
+
+    async function preloadMobileBannerImage(onProgress) {
+        const url = resolveAssetUrl(MOBILE_BANNER_IMAGE);
+
+        try {
+            const response = await fetch(url, {
+                cache: "force-cache",
+                credentials: "same-origin",
+            });
+
+            if (!response.ok) {
+                throw new Error(`Mobile banner HTTP ${response.status}`);
+            }
+
+            const total = Number(response.headers.get("content-length")) || 0;
+            const body = response.body;
+
+            if (!body || !body.getReader) {
+                const blob = await response.blob();
+                if (onProgress) onProgress(100);
+                if (mobileBannerImage) {
+                    mobileBannerBlobUrl = URL.createObjectURL(blob);
+                    mobileBannerImage.src = mobileBannerBlobUrl;
+                }
+                return;
+            }
+
+            const reader = body.getReader();
+            const chunks = [];
+            let loaded = 0;
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                chunks.push(value);
+                loaded += value.length;
+                if (onProgress && total > 0) {
+                    onProgress(Math.min(100, Math.round((loaded / total) * 100)));
+                }
+            }
+
+            if (onProgress) onProgress(100);
+            const blob = new Blob(chunks, { type: "image/webp" });
+            if (mobileBannerImage) {
+                mobileBannerBlobUrl = URL.createObjectURL(blob);
+                mobileBannerImage.src = mobileBannerBlobUrl;
+            }
+        } catch (err) {
+            console.warn("[InfersioAI] Mobile banner fetch failed, using image preload:", err);
+            await waitForImage(MOBILE_BANNER_IMAGE);
+            if (onProgress) onProgress(100);
+        }
+    }
+
+    function initMobileScrollNavTheme() {
+        if (!servicesSection || mobileNavThemeObserver) return;
+
+        mobileNavThemeObserver = new IntersectionObserver(
+            (entries) => {
+                entries.forEach((entry) => {
+                    const overServices = entry.isIntersecting && entry.intersectionRatio >= 0.12;
+                    document.body.classList.toggle("home-page--services", overServices);
+                });
+            },
+            { threshold: [0, 0.12, 0.35] }
+        );
+
+        mobileNavThemeObserver.observe(servicesSection);
+    }
+
+    function initMobileHomeBanner() {
+        document.body.classList.add("home-page--mobile-banner");
+        enablePageScroll();
+        fadeInHomeNav();
+        setBannerScrollHintVisible(false);
+
+        if (servicesSection) {
+            servicesSection.setAttribute("aria-hidden", "false");
+            servicesSection.classList.add("is-visible");
+        }
+
+        initMobileScrollNavTheme();
     }
 
     function bufferedEndSec(targetVideo) {
@@ -864,16 +966,21 @@
     async function runLoader() {
         if (!loader) {
             document.body.classList.remove("is-loading");
-            try {
-                if (preferProgressiveBannerLoad()) {
-                    await preloadBannerVideoFully();
-                } else {
-                    await preloadBannerVideoDesktop();
+            if (isMobileHomeExperience()) {
+                try {
+                    await preloadMobileBannerImage();
+                } catch (e) {
+                    console.error("[InfersioAI] Mobile banner preload failed:", e);
                 }
-            } catch (e) {
-                console.error("[InfersioAI] Banner preload failed:", e);
+                initMobileHomeBanner();
+            } else {
+                try {
+                    await preloadBannerVideoDesktop();
+                } catch (e) {
+                    console.error("[InfersioAI] Banner preload failed:", e);
+                }
+                startBannerVideo();
             }
-            startBannerVideo();
             return;
         }
 
@@ -895,23 +1002,24 @@
             waitForWindowLoad(),
         ]).catch(() => undefined);
 
-        if (preferProgressiveBannerLoad()) {
+        if (isMobileHomeExperience()) {
+            if (loaderStatus) {
+                loaderStatus.textContent = "Loading banner…";
+            }
+
             try {
-                await preloadBannerVideoFully((downloadPct) => {
+                await preloadMobileBannerImage((downloadPct) => {
                     setProgress(12 + downloadPct * 0.8);
                 });
             } catch (e) {
-                console.error("[InfersioAI] Banner preload failed:", e);
+                console.error("[InfersioAI] Mobile banner preload failed:", e);
                 if (loaderStatus) {
-                    loaderStatus.textContent = "Could not load intro — check assets/banner.webm on server";
-                }
-                if (video && isBannerReadyToInteract(video)) {
-                    bannerMediaReady = true;
+                    loaderStatus.textContent = "Could not load banner — check assets/mobilebanner.webp";
                 }
             }
 
             setProgress(94);
-            startBannerVideo();
+            initMobileHomeBanner();
 
             await backgroundAssets;
             setProgress(98);
@@ -1003,6 +1111,7 @@
         const servicesLink = menu.querySelector('a[href="#services"]');
         if (servicesLink) {
             servicesLink.addEventListener("click", (e) => {
+                if (document.body.classList.contains("home-page--mobile-banner")) return;
                 if (servicesVisible) return;
                 e.preventDefault();
                 if (video) {
@@ -1134,6 +1243,9 @@
         window.addEventListener("pagehide", () => {
             if (bannerBlobUrl) {
                 URL.revokeObjectURL(bannerBlobUrl);
+            }
+            if (mobileBannerBlobUrl) {
+                URL.revokeObjectURL(mobileBannerBlobUrl);
             }
         });
         runLoader();

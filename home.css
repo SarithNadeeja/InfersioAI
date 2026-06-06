@@ -523,6 +523,89 @@ body.home-page--after-video .hero-banner__shade {
     display: none;
 }
 
+/* Mobile home (JS adds .home-page--mobile-banner) — fixed image, content scrolls over; PC unchanged */
+.hero-banner__mobile-image {
+    display: none;
+}
+
+body.home-page--mobile-banner {
+    overflow-y: auto;
+    height: auto;
+    min-height: 100%;
+}
+
+body.home-page--mobile-banner:not(.is-loading) {
+    overflow-y: auto;
+    height: auto;
+}
+
+body.home-page--mobile-banner .hero-banner__mobile-image {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    pointer-events: none;
+    transform: translateZ(0);
+    backface-visibility: hidden;
+}
+
+body.home-page--mobile-banner .hero-banner__video {
+    display: none !important;
+}
+
+body.home-page--mobile-banner .hero-banner__hint {
+    display: none !important;
+}
+
+body.home-page--mobile-banner .hero-banner {
+    height: 100vh;
+    height: 100dvh;
+    min-height: 0;
+    background: transparent;
+    pointer-events: none;
+    touch-action: pan-y;
+}
+
+body.home-page--mobile-banner .hero-banner__shade {
+    position: fixed;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+}
+
+body.home-page--mobile-banner .site-main--fullscreen {
+    height: auto;
+    min-height: 100vh;
+    min-height: 100dvh;
+    overflow: visible;
+}
+
+body.home-page--mobile-banner .home-services,
+body.home-page--mobile-banner .home-why,
+body.home-page--mobile-banner .home-clients,
+body.home-page--mobile-banner .home-leadership,
+body.home-page--mobile-banner .home-project-cta,
+body.home-page--mobile-banner .home-comments,
+body.home-page--mobile-banner .site-footer,
+body.home-page--mobile-banner .ai-site-footer {
+    position: relative;
+    z-index: 2;
+}
+
+body.home-page--mobile-banner:not(.home-page--services) .home-nav__brand,
+body.home-page--mobile-banner:not(.home-page--services) .home-nav__link {
+    color: #fff;
+}
+
+body.home-page--mobile-banner:not(.home-page--services) .home-nav__toggle {
+    color: #fff;
+    border-color: rgba(255, 255, 255, 0.55);
+}
+
 /* Services zoom-in after banner (video timing unchanged; content scales onto screen) */
 body.home-page--services-zoom-reveal {
     overflow: hidden;

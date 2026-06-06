@@ -121,6 +121,13 @@ if (function_exists("flush")) {
     <main class="site-main site-main--fullscreen">
         <section id="home" class="hero-banner" aria-label="Banner">
             <div class="hero-banner__media" aria-hidden="true">
+                <img
+                    class="hero-banner__mobile-image"
+                    src="assets/mobilebanner.webp"
+                    alt=""
+                    decoding="async"
+                    fetchpriority="high"
+                >
                 <video
                     id="banner-video"
                     class="hero-banner__video"
