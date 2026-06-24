@@ -1,6 +1,7 @@
 (function () {
     const MIN_LOADER_MS = 700;
     const BANNER_IMAGE = "assets/banner.webp";
+    const MOBILE_BANNER_IMAGE = "assets/mobilebanner.webp";
     const SERVICE_IMAGES = [
         "assets/ai.webp",
         "assets/development.webp",
@@ -12,12 +13,9 @@
     const loaderPct = document.getElementById("ai-loader-pct");
     const loaderStatus = document.getElementById("ai-loader-status");
     const bannerImage = document.querySelector(".hero-banner__image");
+    const mobileBannerImage = document.querySelector(".hero-banner__mobile-image");
     const servicesSection = document.getElementById("services");
     const serviceCards = document.querySelectorAll(".home-services__card");
-    const homeNav = document.querySelector(".home-nav");
-    const homeNavMenu = document.getElementById("homeNav");
-    const homeNavToggle = document.getElementById("homeNavToggle");
-
     const statusLines = [
         "Calibrating neural mesh…",
         "Syncing vision models…",
@@ -27,7 +25,14 @@
     let statusIndex = 0;
     let statusTimer = null;
     let bannerBlobUrl = null;
-    let scrollNavThemeObserver = null;
+    let mobileBannerBlobUrl = null;
+
+    function isMobileHomeExperience() {
+        return (
+            window.matchMedia("(max-width: 768px)").matches ||
+            /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)
+        );
+    }
 
     function setProgress(value) {
         const pct = Math.min(100, Math.max(0, Math.round(value)));
@@ -100,8 +105,8 @@
         });
     }
 
-    async function preloadBannerImage(onProgress) {
-        const url = resolveAssetUrl(BANNER_IMAGE);
+    async function preloadBannerImage(onProgress, imagePath, targetEl) {
+        const url = resolveAssetUrl(imagePath);
 
         try {
             const response = await fetch(url, {
@@ -119,9 +124,14 @@
             if (!body || !body.getReader) {
                 const blob = await response.blob();
                 if (onProgress) onProgress(100);
-                if (bannerImage) {
-                    bannerBlobUrl = URL.createObjectURL(blob);
-                    bannerImage.src = bannerBlobUrl;
+                if (targetEl) {
+                    const blobUrl = URL.createObjectURL(blob);
+                    if (imagePath === MOBILE_BANNER_IMAGE) {
+                        mobileBannerBlobUrl = blobUrl;
+                    } else {
+                        bannerBlobUrl = blobUrl;
+                    }
+                    targetEl.src = blobUrl;
                 }
                 return;
             }
@@ -142,15 +152,28 @@
 
             if (onProgress) onProgress(100);
             const blob = new Blob(chunks, { type: "image/webp" });
-            if (bannerImage) {
-                bannerBlobUrl = URL.createObjectURL(blob);
-                bannerImage.src = bannerBlobUrl;
+            if (targetEl) {
+                const blobUrl = URL.createObjectURL(blob);
+                if (imagePath === MOBILE_BANNER_IMAGE) {
+                    mobileBannerBlobUrl = blobUrl;
+                } else {
+                    bannerBlobUrl = blobUrl;
+                }
+                targetEl.src = blobUrl;
             }
         } catch (err) {
             console.warn("[InfersioAI] Banner fetch failed, using image preload:", err);
-            await waitForImage(BANNER_IMAGE);
+            await waitForImage(imagePath);
             if (onProgress) onProgress(100);
         }
+    }
+
+    async function preloadDesktopBannerImage(onProgress) {
+        return preloadBannerImage(onProgress, BANNER_IMAGE, bannerImage);
+    }
+
+    async function preloadMobileBannerImage(onProgress) {
+        return preloadBannerImage(onProgress, MOBILE_BANNER_IMAGE, mobileBannerImage);
     }
 
     function enablePageScroll() {
@@ -158,38 +181,18 @@
         document.body.classList.add("home-page--scrollable");
     }
 
-    function fadeInHomeNav() {
-        if (!homeNav) return;
-        homeNav.classList.remove("is-faded");
-    }
-
-    function initScrollNavTheme() {
-        if (!servicesSection || scrollNavThemeObserver) return;
-
-        scrollNavThemeObserver = new IntersectionObserver(
-            (entries) => {
-                entries.forEach((entry) => {
-                    const overServices = entry.isIntersecting && entry.intersectionRatio >= 0.12;
-                    document.body.classList.toggle("home-page--services", overServices);
-                });
-            },
-            { threshold: [0, 0.12, 0.35] }
-        );
-
-        scrollNavThemeObserver.observe(servicesSection);
-    }
-
     function initHomeBanner() {
-        document.body.classList.add("home-page--image-banner");
+        if (isMobileHomeExperience()) {
+            document.body.classList.add("home-page--mobile-banner");
+        } else {
+            document.body.classList.add("home-page--image-banner");
+        }
         enablePageScroll();
-        fadeInHomeNav();
 
         if (servicesSection) {
             servicesSection.setAttribute("aria-hidden", "false");
             servicesSection.classList.add("is-visible");
         }
-
-        initScrollNavTheme();
     }
 
     function initServicesEffects() {
@@ -242,7 +245,11 @@
         if (!loader) {
             document.body.classList.remove("is-loading");
             try {
-                await preloadBannerImage();
+                if (isMobileHomeExperience()) {
+                    await preloadMobileBannerImage();
+                } else {
+                    await preloadDesktopBannerImage();
+                }
             } catch (e) {
                 console.error("[InfersioAI] Banner preload failed:", e);
             }
@@ -281,11 +288,17 @@
         };
 
         try {
-            await preloadBannerImage(onBannerProgress);
+            if (isMobileHomeExperience()) {
+                await preloadMobileBannerImage(onBannerProgress);
+            } else {
+                await preloadDesktopBannerImage(onBannerProgress);
+            }
         } catch (e) {
             console.error("[InfersioAI] Banner preload failed:", e);
             if (loaderStatus) {
-                loaderStatus.textContent = "Could not load banner — check assets/banner.webp";
+                loaderStatus.textContent = isMobileHomeExperience()
+                    ? "Could not load banner — check assets/mobilebanner.webp"
+                    : "Could not load banner — check assets/banner.webp";
             }
         }
 
@@ -308,26 +321,6 @@
         setTimeout(() => {
             loader.remove();
         }, 450);
-    }
-
-    function initHomeNav() {
-        const toggle = document.getElementById("homeNavToggle");
-        const menu = document.getElementById("homeNav");
-        if (!toggle || !menu) return;
-
-        toggle.addEventListener("click", () => {
-            const open = menu.classList.toggle("is-open");
-            toggle.setAttribute("aria-expanded", open ? "true" : "false");
-            toggle.setAttribute("aria-label", open ? "Close menu" : "Open menu");
-        });
-
-        menu.querySelectorAll(".home-nav__link").forEach((link) => {
-            link.addEventListener("click", () => {
-                menu.classList.remove("is-open");
-                toggle.setAttribute("aria-expanded", "false");
-                toggle.setAttribute("aria-label", "Open menu");
-            });
-        });
     }
 
     function createCommentCard(comment) {
@@ -442,12 +435,14 @@
     }
 
     if (document.body.classList.contains("home-page")) {
-        initHomeNav();
         initServicesEffects();
         initHomeCommentForm();
         window.addEventListener("pagehide", () => {
             if (bannerBlobUrl) {
                 URL.revokeObjectURL(bannerBlobUrl);
+            }
+            if (mobileBannerBlobUrl) {
+                URL.revokeObjectURL(mobileBannerBlobUrl);
             }
         });
         runLoader();

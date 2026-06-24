@@ -6,6 +6,8 @@ if (empty($_SESSION["comment_csrf"])) {
     $_SESSION["comment_csrf"] = bin2hex(random_bytes(16));
 }
 
+$navCurrent = "home";
+
 $homeComments = [];
 $homeClients = [];
 $homeLeadership = [];
@@ -103,19 +105,14 @@ if (function_exists("flush")) {
         </div>
     </div>
 
-    <header class="home-nav">
-        <a href="index.php" class="home-nav__brand">Infersio AI</a>
-        <nav class="home-nav__menu" id="homeNav" aria-label="Main navigation">
-            <ul class="home-nav__list">
-                <li><a href="index.php" class="home-nav__link is-active" aria-current="page">Home</a></li>
-                <li><a href="services.php" class="home-nav__link">Services</a></li>
-                <li><a href="about.php" class="home-nav__link">About us</a></li>
-                <li><a href="contact.php" class="home-nav__link">Contact us</a></li>
-            </ul>
-        </nav>
-        <button type="button" class="home-nav__toggle" id="homeNavToggle" aria-label="Open menu" aria-expanded="false" aria-controls="homeNav">
-            Menu
-        </button>
+    <header class="site-header site-header--dark">
+        <div class="container">
+            <a class="logo" href="index.php">InfersioAI</a>
+            <button class="nav-toggle" id="navToggle" aria-label="Toggle menu">Menu</button>
+            <nav class="navbar" id="navbar">
+                <?php require __DIR__ . "/includes/site-nav.php"; ?>
+            </nav>
+        </div>
     </header>
 
     <main class="site-main site-main--fullscreen">
@@ -124,6 +121,13 @@ if (function_exists("flush")) {
                 <img
                     class="hero-banner__image"
                     src="assets/banner.webp"
+                    alt=""
+                    decoding="async"
+                    fetchpriority="high"
+                >
+                <img
+                    class="hero-banner__mobile-image"
+                    src="assets/mobilebanner.webp"
                     alt=""
                     decoding="async"
                     fetchpriority="high"
@@ -412,6 +416,7 @@ if (function_exists("flush")) {
 
     <?php require __DIR__ . '/includes/site-footer.php'; ?>
 
+    <script src="script.js"></script>
     <script src="home.js"></script>
 </body>
 </html>
