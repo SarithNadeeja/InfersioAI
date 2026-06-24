@@ -394,6 +394,7 @@ body.home-page--image-banner:not(.is-loading) {
     body.home-page--image-banner .home-services,
     body.home-page--image-banner .home-why,
     body.home-page--image-banner .home-live-counter,
+    body.home-page--image-banner .home-stats,
     body.home-page--image-banner .client-slideshow,
     body.home-page--image-banner .home-leadership,
     body.home-page--image-banner .home-project-cta,
@@ -405,12 +406,12 @@ body.home-page--image-banner:not(.is-loading) {
     }
 }
 
-/* Mobile home — contained mobilebanner.webp, normal page flow (not full-screen) */
+/* Mobile home — fixed banner (cropped height), content scrolls over */
 body.home-page--mobile-banner {
+    --mobile-banner-h: min(68vh, 440px);
     overflow-y: auto;
     height: auto;
     min-height: 100%;
-    background: #ffffff;
 }
 
 body.home-page--mobile-banner:not(.is-loading) {
@@ -418,103 +419,72 @@ body.home-page--mobile-banner:not(.is-loading) {
     height: auto;
 }
 
-body.home-page--mobile-banner .hero-banner__media {
-    position: relative;
-    inset: auto;
-    z-index: auto;
-    background: #ffffff;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: clamp(8px, 2.5vw, 16px) clamp(16px, 5vw, 28px) clamp(12px, 3vw, 20px);
-}
-
-body.home-page--mobile-banner .hero-banner__mobile-image {
-    display: block;
-    position: relative;
-    inset: auto;
-    width: 100%;
-    max-width: min(400px, 92vw);
-    height: auto;
-    max-height: min(58vh, 360px);
-    object-fit: contain;
-    object-position: center;
-    margin: 0 auto;
-    pointer-events: none;
-}
-
-body.home-page--mobile-banner .hero-banner {
-    height: auto;
-    min-height: 0;
-    background: #ffffff;
-    pointer-events: auto;
-    touch-action: auto;
-    overflow: visible;
-}
-
-body.home-page--mobile-banner .hero-banner__shade {
-    display: none;
-}
-
-body.home-page--mobile-banner .site-main--fullscreen {
-    height: auto;
-    min-height: 0;
-    overflow: visible;
-    padding-top: var(--site-header-h);
-    background: #ffffff;
-}
-
-body.home-page--mobile-banner .home-services {
-    min-height: 0;
-    padding-top: clamp(20px, 4vw, 32px);
-}
-
-body.home-page--mobile-banner .home-services__inner {
-    min-height: 0;
-}
-
-body.home-page--mobile-banner .home-services,
-body.home-page--mobile-banner .home-why,
-body.home-page--mobile-banner .home-live-counter,
-body.home-page--mobile-banner .client-slideshow,
-body.home-page--mobile-banner .home-leadership,
-body.home-page--mobile-banner .home-project-cta,
-body.home-page--mobile-banner .home-comments,
-body.home-page--mobile-banner .site-footer,
-body.home-page--mobile-banner .ai-site-footer {
-    position: relative;
-    z-index: auto;
-}
-
 @media (max-width: 768px) {
-    body.home-page--mobile-banner .site-header--dark {
-        background: #ffffff;
-        border-bottom: 1px solid rgba(0, 0, 0, 0.08);
-        backdrop-filter: none;
-        -webkit-backdrop-filter: none;
-        box-shadow: none;
+    body.home-page--mobile-banner .hero-banner__media {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: var(--mobile-banner-h);
+        z-index: 0;
+        overflow: hidden;
+        background: #000;
     }
 
-    body.home-page--mobile-banner .site-header--dark.is-scrolled {
-        background: #ffffff;
-        border-bottom-color: rgba(0, 0, 0, 0.1);
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+    body.home-page--mobile-banner .hero-banner__mobile-image {
+        display: block;
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: center top;
+        pointer-events: none;
+        transform: translateZ(0);
+        backface-visibility: hidden;
     }
 
-    body.home-page--mobile-banner .logo,
-    body.home-page--mobile-banner .nav-menu a,
-    body.home-page--mobile-banner .nav-toggle {
-        color: #0a0a0a;
-    }
-
-    body.home-page--mobile-banner .nav-menu a:hover,
-    body.home-page--mobile-banner .nav-menu a[aria-current="page"] {
-        color: #2563eb;
-    }
-
-    body.home-page--mobile-banner .nav-toggle {
-        border-color: #0a0a0a;
+    body.home-page--mobile-banner .hero-banner {
+        height: var(--mobile-banner-h);
+        min-height: 0;
         background: transparent;
+        pointer-events: none;
+        touch-action: pan-y;
+        overflow: hidden;
+    }
+
+    body.home-page--mobile-banner .hero-banner__shade {
+        display: block;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: var(--mobile-banner-h);
+        z-index: 1;
+        pointer-events: none;
+        background:
+            linear-gradient(180deg, rgba(0, 0, 0, 0.35) 0%, transparent 32%),
+            linear-gradient(0deg, rgba(255, 255, 255, 0.92) 0%, transparent 28%);
+    }
+
+    body.home-page--mobile-banner .site-main--fullscreen {
+        height: auto;
+        min-height: 0;
+        overflow: visible;
+        padding-top: 0;
+    }
+
+    body.home-page--mobile-banner .home-services,
+    body.home-page--mobile-banner .home-why,
+    body.home-page--mobile-banner .home-stats,
+    body.home-page--mobile-banner .client-slideshow,
+    body.home-page--mobile-banner .home-leadership,
+    body.home-page--mobile-banner .home-project-cta,
+    body.home-page--mobile-banner .home-comments,
+    body.home-page--mobile-banner .site-footer,
+    body.home-page--mobile-banner .ai-site-footer {
+        position: relative;
+        z-index: 2;
     }
 }
 
@@ -752,31 +722,34 @@ body.home-page--scrollable .home-services {
     outline-offset: 3px;
 }
 
-/* —— Live counter (inside services) —— */
-.home-services .home-live-counter {
+/* —— Live stats (between services and why choose) —— */
+.home-stats {
+    position: relative;
+    z-index: 2;
     width: 100%;
-    flex-shrink: 0;
-    padding: clamp(8px, 1.5vh, 16px) 0 clamp(4px, 1vh, 10px);
-    border-top: none;
-    background: transparent;
+    background: #ffffff;
+    border-top: 1px solid rgba(0, 0, 0, 0.06);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    padding: clamp(36px, 5vw, 52px) clamp(20px, 4vw, 48px);
 }
 
-.home-live-counter__inner {
+.home-stats__grid {
     display: grid;
     grid-template-columns: repeat(6, minmax(0, 1fr));
-    gap: clamp(10px, 1.5vw, 16px);
+    gap: clamp(12px, 1.8vw, 18px);
     width: min(1240px, 100%);
     margin: 0 auto;
 }
 
-.home-page .home-counter-item {
+.home-stats__item {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 6px;
-    min-height: 96px;
-    padding: 16px 12px;
+    gap: 8px;
+    min-width: 0;
+    min-height: 104px;
+    padding: 18px 14px;
     border: 1px solid rgba(0, 0, 0, 0.08);
     border-radius: 16px;
     background: #f8f9fb;
@@ -787,32 +760,32 @@ body.home-page--scrollable .home-services {
         box-shadow 0.3s ease;
 }
 
-.home-page .home-counter-item.is-inview {
-    animation: home-counter-rise 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+.home-stats__item.is-inview {
+    animation: home-stats-rise 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
-.home-page .home-counter-item:hover {
+.home-stats__item:hover {
     transform: translateY(-3px);
     border-color: rgba(0, 0, 0, 0.14);
     box-shadow: 0 14px 32px rgba(0, 0, 0, 0.08);
 }
 
-.home-page .home-counter-item--highlight {
+.home-stats__item--highlight {
     background: linear-gradient(145deg, #0a0a0a 0%, #1a2238 100%);
     border-color: rgba(0, 0, 0, 0.2);
 }
 
-.home-page .home-counter-item--highlight .home-counter-value {
+.home-stats__item--highlight .home-stats__value {
     color: #ffffff;
 }
 
-.home-page .home-counter-item--highlight .home-counter-label {
+.home-stats__item--highlight .home-stats__label {
     color: rgba(255, 255, 255, 0.72);
 }
 
-.home-page .home-counter-value {
+.home-stats__value {
     font-family: "Sora", "Inter", system-ui, sans-serif;
-    font-size: clamp(1.35rem, 2.4vw, 1.85rem);
+    font-size: clamp(1.35rem, 2.2vw, 1.75rem);
     font-weight: 800;
     line-height: 1.1;
     letter-spacing: -0.03em;
@@ -820,17 +793,18 @@ body.home-page--scrollable .home-services {
     font-variant-numeric: tabular-nums;
 }
 
-.home-page .home-counter-label {
+.home-stats__label {
     font-family: "Inter", system-ui, sans-serif;
-    font-size: clamp(0.72rem, 1.2vw, 0.82rem);
+    font-size: clamp(0.68rem, 1.1vw, 0.78rem);
     font-weight: 600;
     line-height: 1.35;
     letter-spacing: 0.04em;
     text-transform: uppercase;
     color: rgba(0, 0, 0, 0.52);
+    max-width: 12ch;
 }
 
-@keyframes home-counter-rise {
+@keyframes home-stats-rise {
     from {
         opacity: 0;
         transform: translateY(14px);
@@ -841,25 +815,29 @@ body.home-page--scrollable .home-services {
     }
 }
 
-@media (max-width: 980px) {
-    .home-live-counter__inner {
+@media (max-width: 1100px) {
+    .home-stats__grid {
         grid-template-columns: repeat(3, minmax(0, 1fr));
     }
 }
 
 @media (max-width: 640px) {
-    .home-live-counter__inner {
+    .home-stats__grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
-    .home-page .home-counter-item {
-        min-height: 84px;
-        padding: 14px 10px;
+    .home-stats__item {
+        min-height: 92px;
+        padding: 16px 12px;
+    }
+
+    .home-stats__label {
+        max-width: none;
     }
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .home-page .home-counter-item.is-inview {
+    .home-stats__item.is-inview {
         animation: none;
     }
 }
@@ -945,6 +923,11 @@ body.home-page--scrollable .home-services {
     }
 }
 
+/* —— Clients slideshow (directly after Why Choose) —— */
+.home-page .client-slideshow.client-slideshow--light {
+    border-top: 1px solid rgba(0, 0, 0, 0.06);
+}
+
 /* —— Leadership (homepage) —— */
 .home-leadership {
     background: #f7f7f8;
@@ -1019,15 +1002,13 @@ body.home-page--scrollable .home-services {
 }
 
 @media (max-width: 768px) {
-    body.home-page--mobile-banner .home-services,
     .home-services {
-        min-height: 0;
+        min-height: 100dvh;
     }
 
-    body.home-page--mobile-banner .home-services__inner,
     .home-services__inner {
         flex: 0 0 auto;
-        min-height: 0;
+        min-height: min(100%, 100dvh);
         padding-bottom: 8px;
     }
 

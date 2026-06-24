@@ -164,38 +164,6 @@ if (function_exists("flush")) {
             <div class="home-services__inner">
                 <h2 class="home-services__heading">OUR SERVICES</h2>
 
-                <div class="home-live-counter" id="homeLiveCounter" aria-label="Live project statistics">
-                    <div class="home-live-counter__inner">
-                        <?php
-                        $liveCounterItems = [
-                            ["key" => "ai-solutions", "label" => "AI Solutions", "format" => "int"],
-                            ["key" => "web-solutions", "label" => "Web Solutions", "format" => "int"],
-                            ["key" => "mobile-applications", "label" => "Mobile Apps", "format" => "int"],
-                            ["key" => "software-development", "label" => "Software Projects", "format" => "int"],
-                            ["key" => "clients", "label" => "Trusted Clients", "format" => "int"],
-                            ["key" => "today_revenue", "label" => "Today's Revenue", "format" => "currency", "highlight" => true],
-                        ];
-                        foreach ($liveCounterItems as $item):
-                            $value = $homeCounters[$item["key"]] ?? 0;
-                            $format = $item["format"];
-                            $displayValue = $format === "currency"
-                                ? number_format((float) $value, 2, ".", "")
-                                : (string) (int) $value;
-                            ?>
-                            <article
-                                class="home-counter-item<?= !empty($item["highlight"]) ? " home-counter-item--highlight" : "" ?>"
-                                data-counter-format="<?= htmlspecialchars($format) ?>"
-                                data-counter-value="<?= htmlspecialchars($displayValue) ?>"
-                            >
-                                <span class="home-counter-value" data-counter-display aria-live="polite">
-                                    <?= $format === "currency" ? "$0.00" : "0" ?>
-                                </span>
-                                <span class="home-counter-label"><?= htmlspecialchars($item["label"]) ?></span>
-                            </article>
-                        <?php endforeach; ?>
-                    </div>
-                </div>
-
                 <ul class="home-services__grid">
                     <li class="home-services__card">
                         <div class="home-services__media">
@@ -238,6 +206,8 @@ if (function_exists("flush")) {
                 </div>
             </div>
         </section>
+
+        <?php require __DIR__ . "/includes/home-live-counter.php"; ?>
 
         <section id="why-choose" class="home-why" aria-labelledby="home-why-heading">
             <div class="home-why__inner">
@@ -285,13 +255,11 @@ if (function_exists("flush")) {
             </div>
         </section>
 
-        <?php if ($homeClients): ?>
         <?php
         $clients = $homeClients;
         $variant = "light";
         require __DIR__ . "/includes/client-slideshow.php";
         ?>
-        <?php endif; ?>
 
         <?php if ($homeLeadership): ?>
         <section class="home-leadership" aria-labelledby="home-leadership-heading">

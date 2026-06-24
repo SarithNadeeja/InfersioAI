@@ -9,37 +9,36 @@ declare(strict_types=1);
  */
 $clients = $clients ?? [];
 $variant = $variant ?? "light";
+$hasClients = $clients !== [];
 
-if ($clients === []) {
-    return;
-}
+if ($hasClients) {
+    $clientMarqueeMid = (int) ceil(count($clients) / 2);
+    $clientMarqueeTop = array_slice($clients, 0, $clientMarqueeMid);
+    $clientMarqueeBottom = array_slice($clients, $clientMarqueeMid);
 
-$clientMarqueeMid = (int) ceil(count($clients) / 2);
-$clientMarqueeTop = array_slice($clients, 0, $clientMarqueeMid);
-$clientMarqueeBottom = array_slice($clients, $clientMarqueeMid);
-
-if ($clientMarqueeBottom === []) {
-    $clientMarqueeBottom = $clientMarqueeTop;
-}
-
-$padClientMarqueeRow = static function (array $row, int $minItems = 8): array {
-    if ($row === []) {
-        return [];
+    if ($clientMarqueeBottom === []) {
+        $clientMarqueeBottom = $clientMarqueeTop;
     }
-    $padded = [];
-    while (count($padded) < $minItems) {
-        foreach ($row as $client) {
-            $padded[] = $client;
-            if (count($padded) >= $minItems) {
-                break;
+
+    $padClientMarqueeRow = static function (array $row, int $minItems = 8): array {
+        if ($row === []) {
+            return [];
+        }
+        $padded = [];
+        while (count($padded) < $minItems) {
+            foreach ($row as $client) {
+                $padded[] = $client;
+                if (count($padded) >= $minItems) {
+                    break;
+                }
             }
         }
-    }
-    return $padded;
-};
+        return $padded;
+    };
 
-$clientMarqueeTop = $padClientMarqueeRow($clientMarqueeTop);
-$clientMarqueeBottom = $padClientMarqueeRow($clientMarqueeBottom);
+    $clientMarqueeTop = $padClientMarqueeRow($clientMarqueeTop);
+    $clientMarqueeBottom = $padClientMarqueeRow($clientMarqueeBottom);
+}
 $variantClass = $variant === "dark" ? "client-slideshow--dark" : "client-slideshow--light";
 ?>
 <section class="client-slideshow <?= htmlspecialchars($variantClass) ?>" aria-labelledby="client-slideshow-heading">
@@ -53,6 +52,7 @@ $variantClass = $variant === "dark" ? "client-slideshow--dark" : "client-slidesh
         </p>
     </div>
 
+    <?php if ($hasClients): ?>
     <div class="client-slideshow__marquees">
         <?php foreach ([["row" => $clientMarqueeTop, "dir" => "left"], ["row" => $clientMarqueeBottom, "dir" => "right"]] as $marquee): ?>
             <?php if (!$marquee["row"]) {
@@ -85,4 +85,9 @@ $variantClass = $variant === "dark" ? "client-slideshow--dark" : "client-slidesh
             </div>
         <?php endforeach; ?>
     </div>
+    <?php else: ?>
+    <p class="client-slideshow__empty">
+        Client logos from the admin panel will appear here. Add clients under <strong>Admin → Clients</strong>.
+    </p>
+    <?php endif; ?>
 </section>

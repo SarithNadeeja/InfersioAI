@@ -199,7 +199,7 @@
         const section = document.getElementById("homeLiveCounter");
         if (!section) return;
 
-        const items = section.querySelectorAll(".home-counter-item[data-counter-value]");
+        const items = section.querySelectorAll(".home-stats__item[data-counter-value]");
         if (!items.length) return;
 
         const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
