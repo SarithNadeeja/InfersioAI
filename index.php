@@ -122,29 +122,14 @@ if (function_exists("flush")) {
         <section id="home" class="hero-banner" aria-label="Banner">
             <div class="hero-banner__media" aria-hidden="true">
                 <img
-                    class="hero-banner__mobile-image"
-                    src="assets/mobilebanner.webp"
+                    class="hero-banner__image"
+                    src="assets/banner.webp"
                     alt=""
                     decoding="async"
                     fetchpriority="high"
                 >
-                <video
-                    id="banner-video"
-                    class="hero-banner__video"
-                    data-banner-src="assets/banner.webm"
-                    data-banner-mp4="assets/banner.mp4"
-                    muted
-                    playsinline
-                    webkit-playsinline
-                    preload="auto"
-                    disablePictureInPicture
-                >
-                    <source src="assets/banner.mp4" type="video/mp4">
-                    <source src="assets/banner.webm" type="video/webm">
-                </video>
             </div>
             <div class="hero-banner__shade" aria-hidden="true"></div>
-            <p class="hero-banner__hint" id="bannerScrollHint" hidden>Scroll or swipe down to begin</p>
         </section>
 
         <section id="services" class="home-services" aria-hidden="true" aria-label="Our services">

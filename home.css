@@ -1,4 +1,4 @@
-/* Homepage: AI loader + full-screen banner video */
+/* Homepage: AI loader + banner image */
 
 html.home-page-root {
     scroll-padding-top: 0;
@@ -66,7 +66,7 @@ body.home-page.is-loading .home-nav {
     visibility: hidden;
 }
 
-/* —— Home navbar (over video, no background) —— */
+/* —— Home navbar (over banner) —— */
 .home-nav {
     position: fixed;
     top: 0;
@@ -395,7 +395,7 @@ body.home-page.is-loading .home-nav {
     to { stroke-dashoffset: -20; }
 }
 
-/* —— Full-screen banner video —— */
+/* —— Banner image —— */
 .site-main--fullscreen {
     min-height: 100vh;
     min-height: 100dvh;
@@ -412,22 +412,11 @@ body.home-page--scrollable .site-main--fullscreen {
     overflow: visible;
 }
 
-/* After banner ends, remove hero so there is no blank scroll-back area */
-body.home-page--after-video .site-main--fullscreen {
-    min-height: 0;
-}
-
 .hero-banner {
     position: relative;
     height: 100vh;
     height: 100dvh;
     min-height: 480px;
-    overflow: hidden;
-}
-
-body.home-page--after-video .hero-banner {
-    height: 0;
-    min-height: 0;
     overflow: hidden;
 }
 
@@ -438,32 +427,8 @@ body.home-page--after-video .hero-banner {
     background: #000;
 }
 
-body.home-page--scrollable .hero-banner__media {
-    position: absolute;
-    inset: 0;
-}
-
-body.home-page--after-video .hero-banner__media {
+.hero-banner__image {
     display: none;
-}
-
-.hero-banner__video {
-    position: absolute;
-    inset: 0;
-    z-index: 1;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    object-position: center;
-    display: block;
-    opacity: 1;
-    visibility: visible;
-    transform: translateZ(0);
-    backface-visibility: hidden;
-}
-
-.hero-banner__video.is-playing {
-    will-change: contents;
 }
 
 .hero-banner__shade {
@@ -477,136 +442,154 @@ body.home-page--after-video .hero-banner__media {
         radial-gradient(ellipse 80% 50% at 50% 50%, transparent 40%, rgba(0, 0, 0, 0.25) 100%);
 }
 
-body.home-page:not(.home-page--scrollable) .hero-banner {
-    touch-action: none;
-    overscroll-behavior: none;
-}
-
-.hero-banner__hint {
-    position: fixed;
-    left: 50%;
-    bottom: max(28px, env(safe-area-inset-bottom, 0px) + 16px);
-    z-index: 3;
-    transform: translateX(-50%);
-    margin: 0;
-    padding: 10px 18px;
-    border-radius: 999px;
-    border: 1px solid rgba(255, 255, 255, 0.45);
-    background: rgba(0, 0, 0, 0.5);
-    color: rgba(255, 255, 255, 0.92);
-    font-family: "Sora", "Inter", system-ui, sans-serif;
-    font-size: 0.8rem;
-    font-weight: 600;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    pointer-events: none;
-    opacity: 0;
-    transition: opacity 0.35s ease;
-}
-
-.hero-banner__hint.is-visible {
-    opacity: 1;
-}
-
-body.home-page--intro-playing .hero-banner__hint,
-body.home-page--after-video .hero-banner__hint {
-    opacity: 0;
-    visibility: hidden;
-}
-
-body.home-page--scrollable .hero-banner__shade {
-    position: absolute;
-    inset: 0;
-}
-
-body.home-page--after-video .hero-banner__shade {
-    display: none;
-}
-
-/* Mobile home (JS adds .home-page--mobile-banner) — fixed image, content scrolls over; PC unchanged */
-.hero-banner__mobile-image {
-    display: none;
-}
-
-body.home-page--mobile-banner {
+/* Fixed banner image — desktop/tablet; mobile uses contained banner below */
+body.home-page--image-banner {
     overflow-y: auto;
     height: auto;
     min-height: 100%;
 }
 
-body.home-page--mobile-banner:not(.is-loading) {
+body.home-page--image-banner:not(.is-loading) {
     overflow-y: auto;
     height: auto;
 }
 
-body.home-page--mobile-banner .hero-banner__mobile-image {
-    display: block;
-    position: fixed;
-    inset: 0;
-    z-index: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    object-position: center;
-    pointer-events: none;
-    transform: translateZ(0);
-    backface-visibility: hidden;
+@media (min-width: 769px) {
+    body.home-page--image-banner .hero-banner__image {
+        display: block;
+        position: fixed;
+        inset: 0;
+        z-index: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: center;
+        pointer-events: none;
+        transform: translateZ(0);
+        backface-visibility: hidden;
+    }
+
+    body.home-page--image-banner .hero-banner {
+        height: 100vh;
+        height: 100dvh;
+        min-height: 0;
+        background: transparent;
+        pointer-events: none;
+        touch-action: pan-y;
+    }
+
+    body.home-page--image-banner .hero-banner__shade {
+        position: fixed;
+        inset: 0;
+        z-index: 1;
+        pointer-events: none;
+    }
+
+    body.home-page--image-banner .site-main--fullscreen {
+        height: auto;
+        min-height: 100vh;
+        min-height: 100dvh;
+        overflow: visible;
+    }
+
+    body.home-page--image-banner .home-services,
+    body.home-page--image-banner .home-why,
+    body.home-page--image-banner .home-clients,
+    body.home-page--image-banner .home-leadership,
+    body.home-page--image-banner .home-project-cta,
+    body.home-page--image-banner .home-comments,
+    body.home-page--image-banner .site-footer,
+    body.home-page--image-banner .ai-site-footer {
+        position: relative;
+        z-index: 2;
+    }
+
+    body.home-page--image-banner:not(.home-page--services) .home-nav__brand,
+    body.home-page--image-banner:not(.home-page--services) .home-nav__link {
+        color: #fff;
+    }
+
+    body.home-page--image-banner:not(.home-page--services) .home-nav__toggle {
+        color: #fff;
+        border-color: rgba(255, 255, 255, 0.55);
+    }
 }
 
-body.home-page--mobile-banner .hero-banner__video {
-    display: none !important;
+@media (max-width: 768px) {
+    body.home-page--image-banner .home-nav {
+        background: #fff;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    }
+
+    body.home-page--image-banner:not(.home-page--services) .home-nav__brand,
+    body.home-page--image-banner:not(.home-page--services) .home-nav__link {
+        color: #000;
+    }
+
+    body.home-page--image-banner:not(.home-page--services) .home-nav__toggle {
+        color: #000;
+        border-color: #000;
+    }
+
+    body.home-page--image-banner .hero-banner__media {
+        position: relative;
+        inset: auto;
+        z-index: auto;
+        background: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 8px clamp(16px, 5vw, 28px) 4px;
+    }
+
+    body.home-page--image-banner .hero-banner__image {
+        display: block;
+        position: relative;
+        inset: auto;
+        width: 100%;
+        max-width: 400px;
+        height: auto;
+        max-height: min(62vh, 380px);
+        object-fit: contain;
+        object-position: center;
+        margin: 0 auto;
+        pointer-events: none;
+    }
+
+    body.home-page--image-banner .hero-banner__shade {
+        display: none;
+    }
+
+    body.home-page--image-banner .hero-banner {
+        height: auto;
+        min-height: 0;
+        padding-top: 64px;
+        background: #fff;
+        pointer-events: auto;
+        touch-action: auto;
+        overflow: visible;
+    }
+
+    body.home-page--image-banner .site-main--fullscreen {
+        height: auto;
+        min-height: 0;
+        overflow: visible;
+    }
+
+    body.home-page--image-banner .home-services,
+    body.home-page--image-banner .home-why,
+    body.home-page--image-banner .home-clients,
+    body.home-page--image-banner .home-leadership,
+    body.home-page--image-banner .home-project-cta,
+    body.home-page--image-banner .home-comments,
+    body.home-page--image-banner .site-footer,
+    body.home-page--image-banner .ai-site-footer {
+        position: relative;
+        z-index: auto;
+    }
 }
 
-body.home-page--mobile-banner .hero-banner__hint {
-    display: none !important;
-}
-
-body.home-page--mobile-banner .hero-banner {
-    height: 100vh;
-    height: 100dvh;
-    min-height: 0;
-    background: transparent;
-    pointer-events: none;
-    touch-action: pan-y;
-}
-
-body.home-page--mobile-banner .hero-banner__shade {
-    position: fixed;
-    inset: 0;
-    z-index: 1;
-    pointer-events: none;
-}
-
-body.home-page--mobile-banner .site-main--fullscreen {
-    height: auto;
-    min-height: 100vh;
-    min-height: 100dvh;
-    overflow: visible;
-}
-
-body.home-page--mobile-banner .home-services,
-body.home-page--mobile-banner .home-why,
-body.home-page--mobile-banner .home-clients,
-body.home-page--mobile-banner .home-leadership,
-body.home-page--mobile-banner .home-project-cta,
-body.home-page--mobile-banner .home-comments,
-body.home-page--mobile-banner .site-footer,
-body.home-page--mobile-banner .ai-site-footer {
-    position: relative;
-    z-index: 2;
-}
-
-body.home-page--mobile-banner:not(.home-page--services) .home-nav__brand,
-body.home-page--mobile-banner:not(.home-page--services) .home-nav__link {
-    color: #fff;
-}
-
-body.home-page--mobile-banner:not(.home-page--services) .home-nav__toggle {
-    color: #fff;
-    border-color: rgba(255, 255, 255, 0.55);
-}
-
-/* Services zoom-in after banner (video timing unchanged; content scales onto screen) */
+/* Services zoom-in (legacy) */
 body.home-page--services-zoom-reveal {
     overflow: hidden;
 }
@@ -671,7 +654,7 @@ body.home-page--services .home-nav__toggle {
     }
 }
 
-/* —— Services (after banner video) —— */
+/* —— Services (after banner) —— */
 .home-services {
     position: relative;
     z-index: 2;
