@@ -199,6 +199,47 @@ function ensure_database_exists(): void
     }
 }
 
+/** @return array{ai-solutions: int, web-solutions: int, mobile-applications: int, software-development: int, clients: int, today_revenue: float} */
+function public_home_counters(): array
+{
+    $counters = [
+        "ai-solutions" => 0,
+        "web-solutions" => 0,
+        "mobile-applications" => 0,
+        "software-development" => 0,
+        "clients" => 0,
+        "today_revenue" => 0.0,
+    ];
+
+    try {
+        bootstrap_database();
+        $pdo = db();
+
+        $countStmt = $pdo->query(
+            "SELECT service_type, COUNT(*) AS total
+             FROM service_projects
+             GROUP BY service_type"
+        );
+        foreach ($countStmt->fetchAll() as $row) {
+            $serviceType = (string) ($row["service_type"] ?? "");
+            if (array_key_exists($serviceType, $counters)) {
+                $counters[$serviceType] = (int) $row["total"];
+            }
+        }
+
+        $counters["clients"] = (int) $pdo->query("SELECT COUNT(*) FROM clients")->fetchColumn();
+        $counters["today_revenue"] = (float) $pdo->query(
+            "SELECT COALESCE(SUM(project_value), 0)
+             FROM service_projects
+             WHERE DATE(created_at) = CURRENT_DATE"
+        )->fetchColumn();
+    } catch (Throwable $e) {
+        // Keep homepage resilient if DB is unavailable.
+    }
+
+    return $counters;
+}
+
 function public_clients(): array
 {
     try {

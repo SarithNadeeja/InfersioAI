@@ -11,13 +11,21 @@ $navCurrent = "home";
 $homeComments = [];
 $homeClients = [];
 $homeLeadership = [];
+$homeCounters = [
+    "ai-solutions" => 0,
+    "web-solutions" => 0,
+    "mobile-applications" => 0,
+    "software-development" => 0,
+    "clients" => 0,
+    "today_revenue" => 0.0,
+];
 
 /**
  * Load DB-backed sections after hero HTML so a slow remote DB does not delay banner video download.
  */
 function infersio_load_home_page_data(): void
 {
-    global $homeComments, $homeClients, $homeLeadership;
+    global $homeComments, $homeClients, $homeLeadership, $homeCounters;
 
     static $loaded = false;
     if ($loaded) {
@@ -26,6 +34,19 @@ function infersio_load_home_page_data(): void
     $loaded = true;
 
     require_once __DIR__ . "/includes/comments.php";
+
+    try {
+        $homeCounters = public_home_counters();
+    } catch (Throwable $e) {
+        $homeCounters = [
+            "ai-solutions" => 0,
+            "web-solutions" => 0,
+            "mobile-applications" => 0,
+            "software-development" => 0,
+            "clients" => 0,
+            "today_revenue" => 0.0,
+        ];
+    }
 
     try {
         $homeComments = public_visitor_comments();
@@ -51,9 +72,10 @@ function infersio_load_home_page_data(): void
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Sora:wght@500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
-    <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Sora:wght@500;600;700&display=swap" rel="stylesheet"></noscript>
+    <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;600;700;800&family=Sora:wght@500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    <noscript><link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;600;700;800&family=Sora:wght@500;600;700&display=swap" rel="stylesheet"></noscript>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="client-slideshow.css">
     <link rel="stylesheet" href="home.css">
 </head>
 <body id="page-top" class="home-page is-loading">
@@ -136,9 +158,43 @@ if (function_exists("flush")) {
             <div class="hero-banner__shade" aria-hidden="true"></div>
         </section>
 
+        <?php infersio_load_home_page_data(); ?>
+
         <section id="services" class="home-services" aria-hidden="true" aria-label="Our services">
             <div class="home-services__inner">
                 <h2 class="home-services__heading">OUR SERVICES</h2>
+
+                <div class="home-live-counter" id="homeLiveCounter" aria-label="Live project statistics">
+                    <div class="home-live-counter__inner">
+                        <?php
+                        $liveCounterItems = [
+                            ["key" => "ai-solutions", "label" => "AI Solutions", "format" => "int"],
+                            ["key" => "web-solutions", "label" => "Web Solutions", "format" => "int"],
+                            ["key" => "mobile-applications", "label" => "Mobile Apps", "format" => "int"],
+                            ["key" => "software-development", "label" => "Software Projects", "format" => "int"],
+                            ["key" => "clients", "label" => "Trusted Clients", "format" => "int"],
+                            ["key" => "today_revenue", "label" => "Today's Revenue", "format" => "currency", "highlight" => true],
+                        ];
+                        foreach ($liveCounterItems as $item):
+                            $value = $homeCounters[$item["key"]] ?? 0;
+                            $format = $item["format"];
+                            $displayValue = $format === "currency"
+                                ? number_format((float) $value, 2, ".", "")
+                                : (string) (int) $value;
+                            ?>
+                            <article
+                                class="home-counter-item<?= !empty($item["highlight"]) ? " home-counter-item--highlight" : "" ?>"
+                                data-counter-format="<?= htmlspecialchars($format) ?>"
+                                data-counter-value="<?= htmlspecialchars($displayValue) ?>"
+                            >
+                                <span class="home-counter-value" data-counter-display aria-live="polite">
+                                    <?= $format === "currency" ? "$0.00" : "0" ?>
+                                </span>
+                                <span class="home-counter-label"><?= htmlspecialchars($item["label"]) ?></span>
+                            </article>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
 
                 <ul class="home-services__grid">
                     <li class="home-services__card">
@@ -229,72 +285,12 @@ if (function_exists("flush")) {
             </div>
         </section>
 
-        <?php infersio_load_home_page_data(); ?>
-
         <?php if ($homeClients): ?>
         <?php
-        $clientMarqueeMid = (int) ceil(count($homeClients) / 2);
-        $clientMarqueeTop = array_slice($homeClients, 0, $clientMarqueeMid);
-        $clientMarqueeBottom = array_slice($homeClients, $clientMarqueeMid);
-        if ($clientMarqueeBottom === []) {
-            $clientMarqueeBottom = $clientMarqueeTop;
-        }
-        $padClientMarqueeRow = static function (array $row, int $minItems = 8): array {
-            if ($row === []) {
-                return [];
-            }
-            $padded = [];
-            while (count($padded) < $minItems) {
-                foreach ($row as $client) {
-                    $padded[] = $client;
-                    if (count($padded) >= $minItems) {
-                        break;
-                    }
-                }
-            }
-            return $padded;
-        };
-        $clientMarqueeTop = $padClientMarqueeRow($clientMarqueeTop);
-        $clientMarqueeBottom = $padClientMarqueeRow($clientMarqueeBottom);
+        $clients = $homeClients;
+        $variant = "light";
+        require __DIR__ . "/includes/client-slideshow.php";
         ?>
-        <section class="home-clients" aria-labelledby="home-clients-heading">
-            <div class="home-clients__inner">
-                <h2 id="home-clients-heading" class="home-clients__heading">Trusted by clients</h2>
-                <p class="home-clients__sub">Partners who trust InfersioAI to deliver intelligent digital solutions.</p>
-            </div>
-            <div class="home-clients__marquees" aria-hidden="false">
-                <?php foreach ([["row" => $clientMarqueeTop, "dir" => "left"], ["row" => $clientMarqueeBottom, "dir" => "right"]] as $marquee): ?>
-                    <?php if (!$marquee["row"]) {
-                        continue;
-                    } ?>
-                    <div class="home-clients__marquee home-clients__marquee--<?= htmlspecialchars($marquee["dir"]) ?>">
-                        <div class="home-clients__track">
-                            <?php for ($dup = 0; $dup < 2; $dup++): ?>
-                                <div class="home-clients__strip"<?= $dup ? ' aria-hidden="true"' : "" ?>>
-                                    <?php foreach ($marquee["row"] as $client): ?>
-                                        <a
-                                            class="home-clients__card"
-                                            href="<?= htmlspecialchars((string) $client["company_website"]) ?>"
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            title="<?= htmlspecialchars((string) $client["company_name"]) ?>"
-                                            tabindex="<?= $dup ? "-1" : "0" ?>"
-                                        >
-                                            <img
-                                                src="<?= htmlspecialchars((string) $client["logo_path"]) ?>"
-                                                alt="<?= htmlspecialchars((string) $client["company_name"]) ?> logo"
-                                                loading="lazy"
-                                                decoding="async"
-                                            >
-                                        </a>
-                                    <?php endforeach; ?>
-                                </div>
-                            <?php endfor; ?>
-                        </div>
-                    </div>
-                <?php endforeach; ?>
-            </div>
-        </section>
         <?php endif; ?>
 
         <?php if ($homeLeadership): ?>

@@ -17,9 +17,10 @@ $teamMembers = public_team_members();
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600&family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet">
 
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="client-slideshow.css">
     <link rel="stylesheet" href="about.css">
 </head>
 <body id="page-top" class="about-page">
@@ -121,34 +122,23 @@ $teamMembers = public_team_members();
             </div>
         </section>
 
-        <section class="about-section about-section--clients" aria-labelledby="about-clients-heading">
-            <div class="about-container">
-                <div class="about-clients-head about-reveal">
-                    <h2 id="about-clients-heading" class="about-section-title">Trusted by Clients</h2>
-                </div>
-                <?php if (!$clientLogos): ?>
+        <section class="about-section about-section--clients" aria-label="Our clients">
+            <?php if (!$clientLogos): ?>
+                <div class="about-container">
+                    <div class="about-clients-head about-reveal">
+                        <h2 class="about-section-title">Trusted by Clients</h2>
+                    </div>
                     <p class="about-client-empty about-reveal" style="--about-reveal-delay: 60ms">
                         Client logos from the admin panel will appear here.
                     </p>
-                <?php else: ?>
-                    <div class="about-client-logo-grid about-reveal" style="--about-reveal-delay: 80ms">
-                        <?php foreach ($clientLogos as $client): ?>
-                            <a class="about-client-logo-card"
-                               href="<?= htmlspecialchars((string) $client["company_website"]) ?>"
-                               target="_blank"
-                               rel="noopener noreferrer"
-                               title="<?= htmlspecialchars((string) $client["company_name"]) ?>">
-                                <div class="about-client-logo-card-inner">
-                                    <img src="<?= htmlspecialchars((string) $client["logo_path"]) ?>"
-                                         alt="<?= htmlspecialchars((string) $client["company_name"]) ?> logo"
-                                         loading="lazy"
-                                         decoding="async">
-                                </div>
-                            </a>
-                        <?php endforeach; ?>
-                    </div>
-                <?php endif; ?>
-            </div>
+                </div>
+            <?php else: ?>
+                <?php
+                $clients = $clientLogos;
+                $variant = "dark";
+                require __DIR__ . "/includes/client-slideshow.php";
+                ?>
+            <?php endif; ?>
         </section>
 
         <section class="about-section about-section--cta" aria-labelledby="about-cta-heading">

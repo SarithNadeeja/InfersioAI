@@ -195,6 +195,76 @@
         }
     }
 
+    function initLiveCounters() {
+        const section = document.getElementById("homeLiveCounter");
+        if (!section) return;
+
+        const items = section.querySelectorAll(".home-counter-item[data-counter-value]");
+        if (!items.length) return;
+
+        const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+        const formatValue = (value, format) => {
+            if (format === "currency") {
+                return "$" + value.toLocaleString("en-US", {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                });
+            }
+            return Math.round(value).toLocaleString("en-US");
+        };
+
+        const runCounter = (item) => {
+            const display = item.querySelector("[data-counter-display]");
+            if (!display || item.dataset.counterAnimated === "true") return;
+
+            const target = parseFloat(item.dataset.counterValue || "0");
+            const format = item.dataset.counterFormat || "int";
+            item.dataset.counterAnimated = "true";
+            item.classList.add("is-inview");
+
+            if (prefersReducedMotion || !Number.isFinite(target)) {
+                display.textContent = formatValue(target, format);
+                return;
+            }
+
+            const duration = 1400;
+            const start = performance.now();
+
+            const tick = (now) => {
+                const progress = Math.min(1, (now - start) / duration);
+                const eased = 1 - Math.pow(1 - progress, 3);
+                const current = target * eased;
+                display.textContent = formatValue(current, format);
+                if (progress < 1) {
+                    requestAnimationFrame(tick);
+                } else {
+                    display.textContent = formatValue(target, format);
+                }
+            };
+
+            display.textContent = format === "currency" ? "$0.00" : "0";
+            requestAnimationFrame(tick);
+        };
+
+        const observer = new IntersectionObserver(
+            (entries) => {
+                entries.forEach((entry) => {
+                    if (entry.isIntersecting) {
+                        runCounter(entry.target);
+                        observer.unobserve(entry.target);
+                    }
+                });
+            },
+            { threshold: 0.35, rootMargin: "0px 0px -8% 0px" }
+        );
+
+        items.forEach((item, index) => {
+            item.style.setProperty("--counter-delay", `${index * 70}ms`);
+            observer.observe(item);
+        });
+    }
+
     function initServicesEffects() {
         if (!serviceCards.length) return;
 
@@ -436,6 +506,7 @@
 
     if (document.body.classList.contains("home-page")) {
         initServicesEffects();
+        initLiveCounters();
         initHomeCommentForm();
         window.addEventListener("pagehide", () => {
             if (bannerBlobUrl) {
