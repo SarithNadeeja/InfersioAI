@@ -66,78 +66,28 @@ Use `config/database.local.php` for local-only passwords.
 
 ## Uploads folder (admin images)
 
-Client logos and team photos must live **outside** the git repository so `git pull` never deletes them.
+Client logos and team photos are stored in **`storage/uploads/`** inside the project folder. This directory is **gitignored**, so `git pull` never deletes your images.
 
-### Why images disappeared after git pull
-
-The repo used to track `uploads/client-logos/.gitkeep`. On pull, Git can replace your `uploads` symlink with an empty project folder, so the site stops seeing files in `/home/ubuntu/uploads`.
-
-**Fix on server (run once after pulling this update):**
+### After every git pull on the server
 
 ```bash
-cd /home/ubuntu/InfersioAI   # your website folder
+cd /home/ubuntu/InfersioAI
+git pull
 bash deploy/ensure-external-uploads.sh
 ```
 
 That script:
 
-- Keeps files in `/home/ubuntu/uploads`
-- Replaces `uploads/` inside the project with a **symlink** to the external folder
-- Creates `config/uploads.local.php` if missing
+- Creates `storage/uploads/client-logos` and `storage/uploads/team-photos`
+- Copies any old files from `/home/ubuntu/uploads` into `storage/uploads`
+- Removes the old `uploads` symlink and `config/uploads.local.php` (they caused permission errors)
+- Sets permissions so `www-data` can write
 
-### AWS Lightsail / Ubuntu (your setup)
+### Why `/home/ubuntu/uploads` failed
 
-1. Create the shared uploads folder and subfolders:
+PHP runs as `www-data`, which usually cannot write to `/home/ubuntu/uploads`. Uploads now go to `storage/uploads/` under the website folder instead — `www-data` can always write there, and git still ignores the folder.
 
-```bash
-mkdir -p /home/ubuntu/uploads/client-logos /home/ubuntu/uploads/team-photos
-chmod 775 /home/ubuntu/uploads
-```
-
-2. After **every** `git pull`, run:
-
-```bash
-cd /home/ubuntu/InfersioAI
-bash deploy/ensure-external-uploads.sh
-```
-
-3. Or create `config/uploads.local.php` manually (not in git):
-
-```php
-<?php
-declare(strict_types=1);
-
-return [
-    "base_dir" => "/home/ubuntu/uploads",
-];
-```
-
-Or set environment variable `UPLOADS_DIR=/home/ubuntu/uploads`.
-
-The app also **auto-detects** a sibling `../uploads` folder when `uploads.local.php` is absent.
-
-4. Ensure the web server user (`www-data`) can write to `/home/ubuntu/uploads`:
-
-```bash
-cd /home/ubuntu/InfersioAI
-bash deploy/ensure-external-uploads.sh
-sudo systemctl restart apache2
-```
-
-If uploads still fail with **“Upload folder is not writable”**, run manually:
-
-```bash
-sudo usermod -aG ubuntu www-data
-sudo chown -R ubuntu:www-data /home/ubuntu/uploads
-sudo chmod 2775 /home/ubuntu/uploads
-sudo chmod -R 2775 /home/ubuntu/uploads/client-logos /home/ubuntu/uploads/team-photos
-sudo chmod 750 /home/ubuntu
-sudo systemctl restart apache2
-```
-
-`www-data` must be able to **traverse** `/home/ubuntu` and **write** inside `/home/ubuntu/uploads`.
-
-Images are served via `media.php?f=client-logos/…` and still work with the `uploads/` symlink.
+Old images in `/home/ubuntu/uploads` are still found automatically until you re-upload them.
 
 ### Local XAMPP
 

@@ -2,11 +2,9 @@
 declare(strict_types=1);
 
 /**
- * Copy to config/uploads.local.php and set base_dir to your server uploads folder.
- *
- * Ubuntu / Lightsail example (folder next to the website, not inside it):
- *   'base_dir' => '/home/ubuntu/uploads',
+ * Optional override — only needed if you use a custom writable uploads path.
+ * By default uploads go to storage/uploads/ inside the project (gitignored).
  */
 return [
-    "base_dir" => "/home/ubuntu/uploads",
+    // "base_dir" => "/var/www/custom-uploads",
 ];

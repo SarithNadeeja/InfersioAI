@@ -2,8 +2,8 @@
 declare(strict_types=1);
 
 /**
- * Admin uploads — stored OUTSIDE the git repo on production when possible.
- * Default server path: sibling folder ../uploads (e.g. /home/ubuntu/uploads).
+ * Admin uploads live in storage/uploads/ inside the project (gitignored).
+ * www-data can always write there. Old files in /home/ubuntu/uploads are still readable.
  */
 
 function uploads_project_root(): string
@@ -11,53 +11,47 @@ function uploads_project_root(): string
     return dirname(__DIR__);
 }
 
+/** Writable storage — real directory, never a symlink. */
+function uploads_storage_dir(): string
+{
+    return uploads_project_root() . DIRECTORY_SEPARATOR . "storage" . DIRECTORY_SEPARATOR . "uploads";
+}
+
 /** @return list<string> */
-function uploads_external_dir_candidates(): array
+function uploads_legacy_dir_candidates(): array
 {
     $root = uploads_project_root();
-    $parent = dirname($root);
 
     return array_values(array_unique([
-        $parent . DIRECTORY_SEPARATOR . "uploads",
+        $root . DIRECTORY_SEPARATOR . "uploads",
+        dirname($root) . DIRECTORY_SEPARATOR . "uploads",
         "/home/ubuntu/uploads",
         "/var/www/uploads",
     ]));
 }
 
-function uploads_configured_base_dir(): string
+/** Optional override from config/env — only used when writable. */
+function uploads_configured_dir(): ?string
 {
-    static $dir = null;
-    if ($dir !== null) {
-        return $dir;
-    }
-
-    $dir = uploads_project_root() . DIRECTORY_SEPARATOR . "uploads";
-
     $localFile = __DIR__ . "/../config/uploads.local.php";
     if (is_file($localFile)) {
         $fromLocal = require $localFile;
         if (is_array($fromLocal) && !empty($fromLocal["base_dir"])) {
-            $dir = (string) $fromLocal["base_dir"];
+            return rtrim(str_replace(["/", "\\"], DIRECTORY_SEPARATOR, (string) $fromLocal["base_dir"]), DIRECTORY_SEPARATOR);
         }
     }
 
     $envDir = getenv("UPLOADS_DIR");
     if ($envDir !== false && $envDir !== "") {
-        $dir = $envDir;
-    } elseif (!is_file($localFile)) {
-        $external = uploads_detect_external_base_dir();
-        if ($external !== null) {
-            $dir = $external;
-        }
+        return rtrim(str_replace(["/", "\\"], DIRECTORY_SEPARATOR, $envDir), DIRECTORY_SEPARATOR);
     }
 
-    $dir = rtrim(str_replace(["/", "\\"], DIRECTORY_SEPARATOR, $dir), DIRECTORY_SEPARATOR);
-    return $dir;
+    return null;
 }
 
 function uploads_dir_is_writable(string $dir): bool
 {
-    if (!is_dir($dir)) {
+    if (!is_dir($dir) || is_link($dir)) {
         return false;
     }
 
@@ -75,87 +69,12 @@ function uploads_dir_is_writable(string $dir): bool
     return true;
 }
 
-function uploads_detect_external_base_dir(): ?string
-{
-    foreach (uploads_external_dir_candidates() as $candidate) {
-        $resolved = realpath($candidate);
-        if ($resolved !== false && uploads_dir_is_writable($resolved)) {
-            return $resolved;
-        }
-    }
-
-    return null;
-}
-
-/**
- * Path used for mkdir/move_uploaded_file. Prefers project/uploads when it is a
- * symlink to the configured external folder so PHP open_basedir still allows writes.
- */
-function uploads_base_dir(): string
-{
-    static $base = null;
-    if ($base !== null) {
-        return $base;
-    }
-
-    $configured = uploads_configured_base_dir();
-    $projectUploads = uploads_project_root() . DIRECTORY_SEPARATOR . "uploads";
-    $configuredReal = realpath($configured);
-
-    if (is_link($projectUploads)) {
-        $linkTarget = realpath($projectUploads);
-        if ($linkTarget !== false && ($configuredReal === false || $linkTarget === $configuredReal)) {
-            $base = $projectUploads;
-            return $base;
-        }
-    }
-
-    if ($configuredReal !== false && uploads_path_is_under_root($configuredReal, uploads_project_root())) {
-        $base = $configuredReal;
-        return $base;
-    }
-
-    if (is_dir($projectUploads) && !is_link($projectUploads)) {
-        $projectReal = realpath($projectUploads);
-        if ($projectReal !== false && ($configuredReal === false || $projectReal === $configuredReal)) {
-            $base = $projectUploads;
-            return $base;
-        }
-    }
-
-    $base = $configured;
-    return $base;
-}
-
-/** @return list<string> */
-function uploads_allowed_roots(): array
-{
-    $roots = [];
-    foreach ([uploads_base_dir(), uploads_configured_base_dir()] as $candidate) {
-        $resolved = realpath($candidate);
-        $path = $resolved !== false ? $resolved : $candidate;
-        if (!in_array($path, $roots, true)) {
-            $roots[] = $path;
-        }
-    }
-
-    foreach (uploads_external_dir_candidates() as $external) {
-        $resolved = realpath($external);
-        if ($resolved !== false && is_dir($resolved) && !in_array($resolved, $roots, true)) {
-            $roots[] = $resolved;
-        }
-    }
-
-    $legacy = realpath(uploads_project_root() . DIRECTORY_SEPARATOR . "uploads");
-    if ($legacy !== false && !in_array($legacy, $roots, true)) {
-        $roots[] = $legacy;
-    }
-
-    return $roots;
-}
-
 function uploads_can_write_to_dir(string $dir): bool
 {
+    if (is_link($dir)) {
+        return false;
+    }
+
     if (!is_dir($dir)) {
         if (!@mkdir($dir, 0775, true) && !is_dir($dir)) {
             return false;
@@ -169,10 +88,62 @@ function uploads_can_write_to_dir(string $dir): bool
     return uploads_dir_is_writable($dir);
 }
 
-function uploads_permission_fix_hint(): string
+/** Directory used for new uploads — always storage/uploads inside the project. */
+function uploads_base_dir(): string
 {
-    return "SSH to the server and run: bash deploy/ensure-external-uploads.sh "
-        . "(fixes www-data write access to /home/ubuntu/uploads).";
+    static $base = null;
+    if ($base !== null) {
+        return $base;
+    }
+
+    $configured = uploads_configured_dir();
+    if ($configured !== null && uploads_can_write_to_dir($configured)) {
+        $base = realpath($configured) ?: $configured;
+        return $base;
+    }
+
+    $storage = uploads_storage_dir();
+    uploads_can_write_to_dir($storage);
+    $base = realpath($storage) ?: $storage;
+
+    return $base;
+}
+
+/** @return list<string> */
+function uploads_allowed_roots(): array
+{
+    $roots = [];
+
+    foreach ([uploads_base_dir(), uploads_storage_dir()] as $candidate) {
+        $resolved = realpath($candidate);
+        if ($resolved !== false && is_dir($resolved) && !in_array($resolved, $roots, true)) {
+            $roots[] = $resolved;
+        }
+    }
+
+    $configured = uploads_configured_dir();
+    if ($configured !== null) {
+        $resolved = realpath($configured);
+        if ($resolved !== false && is_dir($resolved) && !in_array($resolved, $roots, true)) {
+            $roots[] = $resolved;
+        }
+    }
+
+    foreach (uploads_legacy_dir_candidates() as $legacy) {
+        if (is_link($legacy)) {
+            $target = realpath($legacy);
+            if ($target !== false && is_dir($target) && !in_array($target, $roots, true)) {
+                $roots[] = $target;
+            }
+            continue;
+        }
+        $resolved = realpath($legacy);
+        if ($resolved !== false && is_dir($resolved) && !in_array($resolved, $roots, true)) {
+            $roots[] = $resolved;
+        }
+    }
+
+    return $roots;
 }
 
 /**
@@ -181,31 +152,21 @@ function uploads_permission_fix_hint(): string
 function uploads_ensure_subdir(string $subdir): array
 {
     $subdir = trim(str_replace(["/", "\\"], DIRECTORY_SEPARATOR, $subdir), DIRECTORY_SEPARATOR);
-    $candidates = array_values(array_unique([
-        uploads_base_dir(),
-        uploads_project_root() . DIRECTORY_SEPARATOR . "uploads",
-        uploads_configured_base_dir(),
-    ]));
+    $dir = uploads_base_dir() . DIRECTORY_SEPARATOR . $subdir;
 
-    foreach ($candidates as $base) {
-        $dir = $base . DIRECTORY_SEPARATOR . $subdir;
-        if (uploads_can_write_to_dir($dir)) {
-            return [
-                "ok" => true,
-                "path" => $dir,
-                "error" => "",
-            ];
-        }
+    if (uploads_can_write_to_dir($dir)) {
+        return [
+            "ok" => true,
+            "path" => $dir,
+            "error" => "",
+        ];
     }
-
-    $display = uploads_configured_base_dir() . DIRECTORY_SEPARATOR . $subdir;
 
     return [
         "ok" => false,
-        "path" => $display,
-        "error" => "Upload folder is not writable: " . $display
-            . ". The web server (www-data) needs write access. "
-            . uploads_permission_fix_hint(),
+        "path" => $dir,
+        "error" => "Upload folder is not writable: " . $dir
+            . ". Run on the server: bash deploy/ensure-external-uploads.sh",
     ];
 }
 
@@ -233,15 +194,10 @@ function uploads_save_uploaded_file(string $tmpPath, string $subdir, string $fil
     }
 
     if (!move_uploaded_file($tmpPath, $target)) {
-        $hint = "Check that the web server can write to the uploads folder.";
-        if (is_link(uploads_project_root() . DIRECTORY_SEPARATOR . "uploads")) {
-            $hint = "Run: bash deploy/ensure-external-uploads.sh and ensure www-data owns /home/ubuntu/uploads.";
-        }
-
         return [
             "ok" => false,
             "stored_path" => "",
-            "error" => "Failed to save uploaded file. " . $hint,
+            "error" => "Failed to save uploaded file. Run: bash deploy/ensure-external-uploads.sh",
         ];
     }
 
