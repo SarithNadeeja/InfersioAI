@@ -66,32 +66,44 @@ Use `config/database.local.php` for local-only passwords.
 
 ## Uploads folder (admin images)
 
-Client logos and team photos are stored in **`storage/uploads/`** inside the project folder. This directory is **gitignored**, so `git pull` never deletes your images.
+Client logos and team photos are stored in **`/home/ubuntu/uploads`** — outside the git repo and outside `rsync --delete`.
 
-### After every git pull on the server
+### Deploy to /var/www/html (your setup)
+
+**Do not use** `rsync --delete` without excluding uploads. It deletes images on every deploy.
+
+After every update, run:
 
 ```bash
 cd /home/ubuntu/InfersioAI
 git pull
-bash deploy/ensure-external-uploads.sh
+bash deploy/sync-to-web.sh
 ```
 
 That script:
 
-- Creates `storage/uploads/client-logos` and `storage/uploads/team-photos`
-- Copies any old files from `/home/ubuntu/uploads` into `storage/uploads`
-- Removes the old `uploads` symlink and `config/uploads.local.php` (they caused permission errors)
-- Sets permissions so `www-data` can write
+- Syncs code to `/var/www/html` **without** deleting `storage/uploads/`
+- Keeps real files in `/home/ubuntu/uploads`
+- Links `storage/uploads` → `/home/ubuntu/uploads` in both the repo and web root
+- Sets permissions for `www-data`
 
-### Why `/home/ubuntu/uploads` failed
+### Manual deploy (if needed)
 
-PHP runs as `www-data`, which usually cannot write to `/home/ubuntu/uploads`. Uploads now go to `storage/uploads/` under the website folder instead — `www-data` can always write there, and git still ignores the folder.
+```bash
+sudo rsync -av --delete \
+  --exclude '.git/' \
+  --exclude 'storage/uploads/' \
+  --exclude 'config/uploads.local.php' \
+  /home/ubuntu/InfersioAI/ /var/www/html/
 
-Old images in `/home/ubuntu/uploads` are still found automatically until you re-upload them.
+WEB_ROOT=/var/www/html bash /home/ubuntu/InfersioAI/deploy/ensure-external-uploads.sh
+sudo chown -R www-data:www-data /var/www/html /home/ubuntu/uploads
+sudo systemctl restart apache2
+```
 
 ### Local XAMPP
 
-Without `config/uploads.local.php`, files go to `InfersioAI/uploads/` inside the project (default).
+Without `config/uploads.local.php`, files go to `InfersioAI/storage/uploads/` (default).
 
 ## First-time setup
 

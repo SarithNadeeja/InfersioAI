@@ -1,17 +1,20 @@
 #!/usr/bin/env bash
-# Run after git pull — sets up writable uploads inside the project (gitignored).
-# Usage: bash deploy/ensure-external-uploads.sh
+# Run after git pull — keeps uploads in /home/ubuntu/uploads (never deleted by rsync).
+# Usage:
+#   bash deploy/ensure-external-uploads.sh
+#   WEB_ROOT=/var/www/html bash deploy/ensure-external-uploads.sh
 
 set -euo pipefail
 
 PROJECT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
-STORAGE_UPLOADS="$PROJECT_DIR/storage/uploads"
-LEGACY_EXTERNAL="${UPLOADS_DIR:-/home/ubuntu/uploads}"
+WEB_ROOT="${WEB_ROOT:-$PROJECT_DIR}"
+EXTERNAL_UPLOADS="${UPLOADS_DIR:-/home/ubuntu/uploads}"
 WEB_USER="${WEB_USER:-www-data}"
 DEPLOY_USER="${SUDO_USER:-$(whoami)}"
 
-echo "Project:  $PROJECT_DIR"
-echo "Storage:  $STORAGE_UPLOADS"
+echo "Repo:     $PROJECT_DIR"
+echo "Web root: $WEB_ROOT"
+echo "Uploads:  $EXTERNAL_UPLOADS"
 
 run_root() {
     if [ "$(id -u)" -eq 0 ]; then
@@ -23,51 +26,89 @@ run_root() {
     fi
 }
 
-mkdir -p "$STORAGE_UPLOADS/client-logos" "$STORAGE_UPLOADS/team-photos"
+mkdir -p "$EXTERNAL_UPLOADS/client-logos" "$EXTERNAL_UPLOADS/team-photos"
 
-# Copy any files from old locations into storage/uploads.
-for LEGACY in "$LEGACY_EXTERNAL" "$PROJECT_DIR/uploads"; do
-    if [ -d "$LEGACY" ] && [ ! -L "$LEGACY" ]; then
-        echo "Migrating files from $LEGACY ..."
-        cp -an "$LEGACY/." "$STORAGE_UPLOADS/" 2>/dev/null || true
-    elif [ -L "$LEGACY" ]; then
-        TARGET="$(readlink -f "$LEGACY" 2>/dev/null || true)"
-        if [ -n "$TARGET" ] && [ -d "$TARGET" ]; then
-            echo "Migrating files from symlink $LEGACY -> $TARGET ..."
-            cp -an "$TARGET/." "$STORAGE_UPLOADS/" 2>/dev/null || true
-        fi
+migrate_into_external() {
+    local source="$1"
+    if [ -z "$source" ] || [ ! -e "$source" ]; then
+        return 0
     fi
+
+    local resolved
+    resolved="$(readlink -f "$source" 2>/dev/null || true)"
+    if [ -z "$resolved" ] || [ ! -d "$resolved" ]; then
+        return 0
+    fi
+    if [ "$resolved" = "$(readlink -f "$EXTERNAL_UPLOADS" 2>/dev/null || echo "$EXTERNAL_UPLOADS")" ]; then
+        return 0
+    fi
+
+    echo "Migrating uploads from $resolved ..."
+    cp -an "$resolved/." "$EXTERNAL_UPLOADS/" 2>/dev/null || true
+}
+
+for LEGACY in \
+    "$PROJECT_DIR/storage/uploads" \
+    "$WEB_ROOT/storage/uploads" \
+    "$PROJECT_DIR/uploads" \
+    "$WEB_ROOT/uploads" \
+    "/var/www/html/storage/uploads"
+do
+    migrate_into_external "$LEGACY"
 done
 
-# Remove broken external symlink — uploads now live in storage/uploads (gitignored).
-if [ -L "$PROJECT_DIR/uploads" ]; then
-    echo "Removing uploads symlink (using storage/uploads instead) ..."
-    rm -f "$PROJECT_DIR/uploads"
-elif [ -d "$PROJECT_DIR/uploads" ]; then
-    echo "Removing old project uploads/ folder (files copied to storage/uploads) ..."
-    rm -rf "$PROJECT_DIR/uploads"
+link_storage_uploads() {
+    local site_root="$1"
+    local storage_dir="$site_root/storage"
+    local link_path="$storage_dir/uploads"
+
+    mkdir -p "$storage_dir"
+    if [ -e "$link_path" ] && [ ! -L "$link_path" ]; then
+        migrate_into_external "$link_path"
+        rm -rf "$link_path"
+    fi
+    ln -sfn "$EXTERNAL_UPLOADS" "$link_path"
+    echo "Linked $link_path -> $EXTERNAL_UPLOADS"
+}
+
+link_storage_uploads "$PROJECT_DIR"
+if [ "$(readlink -f "$WEB_ROOT" 2>/dev/null || echo "$WEB_ROOT")" != "$(readlink -f "$PROJECT_DIR" 2>/dev/null || echo "$PROJECT_DIR")" ]; then
+    link_storage_uploads "$WEB_ROOT"
 fi
 
-# uploads.local.php pointing to /home/ubuntu/uploads breaks www-data writes — remove it.
-CONFIG_FILE="$PROJECT_DIR/config/uploads.local.php"
-if [ -f "$CONFIG_FILE" ]; then
-    echo "Removing config/uploads.local.php (using storage/uploads instead) ..."
-    rm -f "$CONFIG_FILE"
+write_uploads_config() {
+    local site_root="$1"
+    local config_dir="$site_root/config"
+    local config_file="$config_dir/uploads.local.php"
+
+    mkdir -p "$config_dir"
+    cat > "$config_file" <<PHP
+<?php
+declare(strict_types=1);
+
+return [
+    "base_dir" => "$EXTERNAL_UPLOADS",
+];
+PHP
+    echo "Wrote $config_file"
+}
+
+write_uploads_config "$PROJECT_DIR"
+if [ "$(readlink -f "$WEB_ROOT" 2>/dev/null || echo "$WEB_ROOT")" != "$(readlink -f "$PROJECT_DIR" 2>/dev/null || echo "$PROJECT_DIR")" ]; then
+    write_uploads_config "$WEB_ROOT"
 fi
 
-echo "Setting permissions on storage/uploads ..."
-run_root chown -R "${DEPLOY_USER}:${WEB_USER}" "$PROJECT_DIR/storage" 2>/dev/null \
-    || chown -R "${DEPLOY_USER}:${DEPLOY_USER}" "$PROJECT_DIR/storage" 2>/dev/null \
-    || true
-run_root chmod -R 775 "$PROJECT_DIR/storage" 2>/dev/null || chmod -R 775 "$PROJECT_DIR/storage" 2>/dev/null || true
+run_root chown -R "${DEPLOY_USER}:${WEB_USER}" "$EXTERNAL_UPLOADS"
+run_root chmod 2775 "$EXTERNAL_UPLOADS"
+run_root find "$EXTERNAL_UPLOADS" -type d -exec chmod 2775 {} + 2>/dev/null || true
+run_root find "$EXTERNAL_UPLOADS" -type f -exec chmod 664 {} + 2>/dev/null || true
 
 if id "$WEB_USER" >/dev/null 2>&1; then
-    if run_root -u "$WEB_USER" test -w "$STORAGE_UPLOADS/client-logos" 2>/dev/null; then
-        echo "OK: $WEB_USER can write to $STORAGE_UPLOADS/client-logos"
+    if run_root -u "$WEB_USER" test -w "$EXTERNAL_UPLOADS/client-logos" 2>/dev/null; then
+        echo "OK: $WEB_USER can write to $EXTERNAL_UPLOADS/client-logos"
     else
-        echo "WARNING: run: sudo chown -R $DEPLOY_USER:$WEB_USER $PROJECT_DIR/storage && sudo chmod -R 775 $PROJECT_DIR/storage"
+        echo "WARNING: sudo chown -R $DEPLOY_USER:$WEB_USER $EXTERNAL_UPLOADS && sudo chmod -R 2775 $EXTERNAL_UPLOADS"
     fi
 fi
 
-echo "Done. New uploads go to: $STORAGE_UPLOADS"
-echo "This folder is gitignored — git pull will not delete your images."
+echo "Done. Uploads persist in $EXTERNAL_UPLOADS (safe from git pull and rsync --delete)."

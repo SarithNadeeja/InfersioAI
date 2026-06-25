@@ -41,9 +41,15 @@ function infersio_load_home_page_data(): array
 
     try {
         $data["clients"] = public_clients();
+    } catch (Throwable $e) {
+        error_log("home clients load failed: " . $e->getMessage());
+        $data["clients"] = [];
+    }
+
+    try {
         $data["leadership"] = team_members_for_display(public_team_members());
     } catch (Throwable $e) {
-        $data["clients"] = [];
+        error_log("home leadership load failed: " . $e->getMessage());
         $data["leadership"] = [];
     }
 
@@ -249,7 +255,6 @@ if (function_exists("flush")) {
         </section>
 
         <?php
-        $clients = $homeClients;
         $variant = "light";
         require __DIR__ . "/includes/client-slideshow.php";
         ?>

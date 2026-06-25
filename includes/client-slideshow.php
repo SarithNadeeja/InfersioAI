@@ -4,19 +4,12 @@ declare(strict_types=1);
 /**
  * Infinite logo marquee — data from admin Clients panel.
  *
- * @var list<array{id: int|string, company_name: string, company_website: string, logo_path: string}>|null $clients
  * @var string $variant 'light' | 'dark'
  */
 require_once __DIR__ . "/db.php";
 
 $variant = $variant ?? "light";
-
-$slideshowInput = null;
-if (isset($clients) && is_array($clients) && $clients !== []) {
-    $slideshowInput = $clients;
-}
-
-$clients = clients_for_display($slideshowInput);
+$clients = clients_for_display();
 $hasClients = $clients !== [];
 
 if ($hasClients) {
@@ -73,15 +66,15 @@ $variantClass = $variant === "dark" ? "client-slideshow--dark" : "client-slidesh
                             <?php foreach ($marquee["row"] as $client): ?>
                                 <a
                                     class="client-slideshow__logo"
-                                    href="<?= htmlspecialchars((string) $client["company_website"]) ?>"
+                                    href="<?= htmlspecialchars(db_row_string($client, "company_website")) ?>"
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    title="<?= htmlspecialchars((string) $client["company_name"]) ?>"
+                                    title="<?= htmlspecialchars(db_row_string($client, "company_name")) ?>"
                                     tabindex="<?= $dup ? "-1" : "0" ?>"
                                 >
                                     <img
-                                        src="<?= htmlspecialchars((string) $client["logo_path"]) ?>"
-                                        alt="<?= htmlspecialchars((string) $client["company_name"]) ?> logo"
+                                        src="<?= htmlspecialchars(db_row_string($client, "logo_path")) ?>"
+                                        alt="<?= htmlspecialchars(db_row_string($client, "company_name")) ?> logo"
                                         loading="lazy"
                                         decoding="async"
                                     >

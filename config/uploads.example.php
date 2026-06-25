@@ -2,9 +2,9 @@
 declare(strict_types=1);
 
 /**
- * Optional override — only needed if you use a custom writable uploads path.
- * By default uploads go to storage/uploads/ inside the project (gitignored).
+ * Production: copy to config/uploads.local.php (created automatically by deploy scripts).
+ *   'base_dir' => '/home/ubuntu/uploads',
  */
 return [
-    // "base_dir" => "/var/www/custom-uploads",
+    // "base_dir" => "/home/ubuntu/uploads",
 ];

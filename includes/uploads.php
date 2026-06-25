@@ -2,8 +2,8 @@
 declare(strict_types=1);
 
 /**
- * Admin uploads live in storage/uploads/ inside the project (gitignored).
- * www-data can always write there. Old files in /home/ubuntu/uploads are still readable.
+ * Admin uploads — persisted in /home/ubuntu/uploads on production (outside git + rsync).
+ * storage/uploads/ in the project is a symlink to that folder.
  */
 
 function uploads_project_root(): string
@@ -11,7 +11,41 @@ function uploads_project_root(): string
     return dirname(__DIR__);
 }
 
-/** Writable storage — real directory, never a symlink. */
+function uploads_persistent_dir(): string
+{
+    static $dir = null;
+    if ($dir !== null) {
+        return $dir;
+    }
+
+    $localFile = __DIR__ . "/../config/uploads.local.php";
+    if (is_file($localFile)) {
+        $fromLocal = require $localFile;
+        if (is_array($fromLocal) && !empty($fromLocal["base_dir"])) {
+            $dir = rtrim(str_replace(["/", "\\"], DIRECTORY_SEPARATOR, (string) $fromLocal["base_dir"]), DIRECTORY_SEPARATOR);
+            return $dir;
+        }
+    }
+
+    $envDir = getenv("UPLOADS_DIR");
+    if ($envDir !== false && $envDir !== "") {
+        $dir = rtrim(str_replace(["/", "\\"], DIRECTORY_SEPARATOR, $envDir), DIRECTORY_SEPARATOR);
+        return $dir;
+    }
+
+    foreach (["/home/ubuntu/uploads", dirname(uploads_project_root()) . DIRECTORY_SEPARATOR . "uploads"] as $candidate) {
+        if (is_dir($candidate)) {
+            $resolved = realpath($candidate);
+            $dir = $resolved !== false ? $resolved : $candidate;
+            return $dir;
+        }
+    }
+
+    $dir = uploads_project_root() . DIRECTORY_SEPARATOR . "storage" . DIRECTORY_SEPARATOR . "uploads";
+    return $dir;
+}
+
+/** Path under the project used for /uploads/ URLs (usually a symlink). */
 function uploads_storage_dir(): string
 {
     return uploads_project_root() . DIRECTORY_SEPARATOR . "storage" . DIRECTORY_SEPARATOR . "uploads";
@@ -23,35 +57,45 @@ function uploads_legacy_dir_candidates(): array
     $root = uploads_project_root();
 
     return array_values(array_unique([
+        uploads_persistent_dir(),
+        uploads_storage_dir(),
         $root . DIRECTORY_SEPARATOR . "uploads",
         dirname($root) . DIRECTORY_SEPARATOR . "uploads",
         "/home/ubuntu/uploads",
         "/var/www/uploads",
+        "/var/www/html/storage/uploads",
     ]));
 }
 
-/** Optional override from config/env — only used when writable. */
+/** Optional override from config/env. */
 function uploads_configured_dir(): ?string
 {
-    $localFile = __DIR__ . "/../config/uploads.local.php";
-    if (is_file($localFile)) {
-        $fromLocal = require $localFile;
-        if (is_array($fromLocal) && !empty($fromLocal["base_dir"])) {
-            return rtrim(str_replace(["/", "\\"], DIRECTORY_SEPARATOR, (string) $fromLocal["base_dir"]), DIRECTORY_SEPARATOR);
-        }
-    }
-
-    $envDir = getenv("UPLOADS_DIR");
-    if ($envDir !== false && $envDir !== "") {
-        return rtrim(str_replace(["/", "\\"], DIRECTORY_SEPARATOR, $envDir), DIRECTORY_SEPARATOR);
+    $persistent = uploads_persistent_dir();
+    $storage = uploads_storage_dir();
+    if ($persistent !== $storage && is_dir($persistent)) {
+        return $persistent;
     }
 
     return null;
 }
 
+function uploads_resolve_dir(string $dir): string
+{
+    if (is_link($dir)) {
+        $target = realpath($dir);
+        if ($target !== false) {
+            return $target;
+        }
+    }
+
+    $resolved = realpath($dir);
+    return $resolved !== false ? $resolved : $dir;
+}
+
 function uploads_dir_is_writable(string $dir): bool
 {
-    if (!is_dir($dir) || is_link($dir)) {
+    $dir = uploads_resolve_dir($dir);
+    if (!is_dir($dir)) {
         return false;
     }
 
@@ -71,24 +115,22 @@ function uploads_dir_is_writable(string $dir): bool
 
 function uploads_can_write_to_dir(string $dir): bool
 {
-    if (is_link($dir)) {
-        return false;
-    }
+    $resolved = uploads_resolve_dir($dir);
 
-    if (!is_dir($dir)) {
-        if (!@mkdir($dir, 0775, true) && !is_dir($dir)) {
+    if (!is_dir($resolved)) {
+        if (!@mkdir($resolved, 0775, true) && !is_dir($resolved)) {
             return false;
         }
     }
 
-    if (!uploads_dir_is_writable($dir)) {
-        @chmod($dir, 0775);
+    if (!uploads_dir_is_writable($resolved)) {
+        @chmod($resolved, 2775);
     }
 
-    return uploads_dir_is_writable($dir);
+    return uploads_dir_is_writable($resolved);
 }
 
-/** Directory used for new uploads — always storage/uploads inside the project. */
+/** Directory used for new uploads. */
 function uploads_base_dir(): string
 {
     static $base = null;
@@ -96,15 +138,9 @@ function uploads_base_dir(): string
         return $base;
     }
 
-    $configured = uploads_configured_dir();
-    if ($configured !== null && uploads_can_write_to_dir($configured)) {
-        $base = realpath($configured) ?: $configured;
-        return $base;
-    }
-
-    $storage = uploads_storage_dir();
-    uploads_can_write_to_dir($storage);
-    $base = realpath($storage) ?: $storage;
+    $persistent = uploads_persistent_dir();
+    uploads_can_write_to_dir($persistent);
+    $base = uploads_resolve_dir($persistent);
 
     return $base;
 }
@@ -114,11 +150,13 @@ function uploads_allowed_roots(): array
 {
     $roots = [];
     $candidates = [
+        uploads_persistent_dir(),
         uploads_storage_dir(),
         uploads_project_root() . DIRECTORY_SEPARATOR . "uploads",
         dirname(uploads_project_root()) . DIRECTORY_SEPARATOR . "uploads",
         "/home/ubuntu/uploads",
         "/var/www/uploads",
+        "/var/www/html/storage/uploads",
     ];
 
     $configured = uploads_configured_dir();
@@ -305,6 +343,32 @@ function uploads_delete_stored_file(string $storedPath): void
     }
 }
 
+function uploads_web_base(): string
+{
+    static $base = null;
+    if ($base !== null) {
+        return $base;
+    }
+
+    $docRoot = realpath((string) ($_SERVER["DOCUMENT_ROOT"] ?? ""));
+    $projectRoot = realpath(uploads_project_root());
+    if ($docRoot !== false && $projectRoot !== false && str_starts_with($projectRoot, $docRoot)) {
+        $relative = substr($projectRoot, strlen($docRoot));
+        $relative = str_replace("\\", "/", $relative);
+        $base = rtrim($relative, "/");
+        return $base;
+    }
+
+    $scriptDir = str_replace("\\", "/", dirname((string) ($_SERVER["SCRIPT_NAME"] ?? "/index.php")));
+    if ($scriptDir === "/" || $scriptDir === ".") {
+        $base = "";
+    } else {
+        $base = rtrim($scriptDir, "/");
+    }
+
+    return $base;
+}
+
 function uploads_site_base(string $prefix = ""): string
 {
     if ($prefix === "..") {
@@ -314,19 +378,7 @@ function uploads_site_base(string $prefix = ""): string
         return rtrim(str_replace("\\", "/", $prefix), "/");
     }
 
-    static $base = null;
-    if ($base !== null) {
-        return $base;
-    }
-
-    $scriptDir = str_replace("\\", "/", dirname($_SERVER["SCRIPT_NAME"] ?? ""));
-    if ($scriptDir === "/" || $scriptDir === ".") {
-        $base = "";
-    } else {
-        $base = rtrim($scriptDir, "/");
-    }
-
-    return $base;
+    return uploads_web_base();
 }
 
 function uploads_public_src(string $storedPath, string $prefix = ""): string
@@ -337,20 +389,28 @@ function uploads_public_src(string $storedPath, string $prefix = ""): string
     if (preg_match('#^https?://#i', $storedPath)) {
         return $storedPath;
     }
+    if (str_contains($storedPath, "media.php?f=")) {
+        return $storedPath;
+    }
 
     $relative = uploads_normalize_relative($storedPath);
     if ($relative === "") {
         $relative = ltrim(str_replace("\\", "/", $storedPath), "/");
     }
-    $relativeUrl = str_replace("\\", "/", $relative);
-    $query = "media.php?f=" . rawurlencode($relativeUrl);
+    $relative = ltrim(preg_replace('#^uploads/#i', "", str_replace("\\", "/", $relative)), "/");
+    $webPath = "uploads/" . $relative;
 
     if ($prefix === "..") {
-        return "../" . $query;
+        return "../" . $webPath;
     }
     if ($prefix !== "") {
-        return rtrim(str_replace("\\", "/", $prefix), "/") . "/" . $query;
+        return rtrim(str_replace("\\", "/", $prefix), "/") . "/" . $webPath;
     }
-    $base = uploads_site_base();
-    return ($base !== "" ? $base . "/" : "/") . $query;
+
+    $base = uploads_web_base();
+    if ($base === "") {
+        return $webPath;
+    }
+
+    return $base . "/" . $webPath;
 }

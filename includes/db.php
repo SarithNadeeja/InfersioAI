@@ -55,7 +55,7 @@ function db(): PDO
     }
 
     $c = db_config();
-    $dsn = "pgsql:host={$c['host']};port={$c['port']};dbname={$c['name']};connect_timeout=3";
+    $dsn = "pgsql:host={$c['host']};port={$c['port']};dbname={$c['name']};connect_timeout=10";
     $pdo = new PDO($dsn, $c["user"], $c["pass"], [
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
@@ -253,6 +253,22 @@ function public_home_counters(): array
     return $counters;
 }
 
+function db_row_string(array $row, string $field): string
+{
+    if (array_key_exists($field, $row)) {
+        return trim((string) $row[$field]);
+    }
+
+    $needle = strtolower($field);
+    foreach ($row as $key => $value) {
+        if (strtolower((string) $key) === $needle) {
+            return trim((string) $value);
+        }
+    }
+
+    return "";
+}
+
 function public_clients(): array
 {
     try {
@@ -261,10 +277,13 @@ function public_clients(): array
         $stmt = $pdo->query(
             "SELECT id, company_name, company_website, logo_path
              FROM clients
-             WHERE TRIM(logo_path) <> ''
              ORDER BY created_at DESC"
         );
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        return array_values(array_filter($rows, static function (array $row): bool {
+            return db_row_string($row, "logo_path") !== "";
+        }));
     } catch (Throwable $e) {
         error_log("public_clients failed: " . $e->getMessage());
         return [];
@@ -286,19 +305,14 @@ function clients_for_display(?array $clients = null): array
             continue;
         }
 
-        $logo = trim((string) ($client["logo_path"] ?? ""));
+        $logo = db_row_string($client, "logo_path");
         if ($logo === "") {
             continue;
         }
 
-        if (!preg_match('#^https?://#i', $logo) && !str_contains($logo, "media.php?f=")) {
-            $logo = uploads_public_src($logo);
-        }
-        if ($logo === "") {
-            continue;
-        }
-
-        $client["logo_path"] = $logo;
+        $client["company_name"] = db_row_string($client, "company_name");
+        $client["company_website"] = db_row_string($client, "company_website");
+        $client["logo_path"] = uploads_public_src($logo);
         $display[] = $client;
     }
 
