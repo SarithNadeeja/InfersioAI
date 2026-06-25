@@ -66,7 +66,7 @@ Use `config/database.local.php` for local-only passwords.
 
 ## Uploads folder (admin images)
 
-Client logos and team photos are stored in **`/home/ubuntu/uploads`** — outside the git repo and outside `rsync --delete`.
+Client logos and team photos are stored in **`/var/www/infersio-uploads`** — outside `/var/www/html` so `rsync --delete` never deletes them.
 
 ### Deploy to /var/www/html (your setup)
 
@@ -77,45 +77,22 @@ After every update, run:
 ```bash
 cd /home/ubuntu/InfersioAI
 git pull
-bash deploy/sync-to-web.sh
+sudo bash deploy/sync-to-web.sh
 ```
 
 That script:
 
 - Syncs code to `/var/www/html` **without** deleting `storage/uploads/`
-- Keeps real files in `/home/ubuntu/uploads`
-- Links `storage/uploads` → `/home/ubuntu/uploads` in both the repo and web root
+- Keeps real files in `/var/www/infersio-uploads` (migrates from `/home/ubuntu/uploads` if needed)
+- Links `storage/uploads` → `/var/www/infersio-uploads`
 - Sets permissions for `www-data`
 
-### Manual deploy (if needed)
+### Verify uploads work
 
 ```bash
-sudo rsync -av --delete \
-  --exclude '.git/' \
-  --exclude 'storage/uploads/' \
-  --exclude 'config/uploads.local.php' \
-  /home/ubuntu/InfersioAI/ /var/www/html/
-
-WEB_ROOT=/var/www/html bash /home/ubuntu/InfersioAI/deploy/ensure-external-uploads.sh
-sudo chown -R www-data:www-data /var/www/html /home/ubuntu/uploads
-sudo systemctl restart apache2
-```
-
-### One-time fix (if symlink setup failed with "Permission denied")
-
-```bash
-cd /home/ubuntu/InfersioAI
-git pull
-sudo bash deploy/ensure-external-uploads.sh
-# or full deploy:
-sudo bash deploy/sync-to-web.sh
-```
-
-Verify:
-
-```bash
-ls -la /var/www/html/storage/uploads    # must show: uploads -> /home/ubuntu/uploads
-ls -la /home/ubuntu/uploads/client-logos/
+sudo -u www-data test -w /var/www/html/storage/uploads/client-logos && echo OK || echo FAIL
+ls -la /var/www/html/storage/uploads    # uploads -> /var/www/infersio-uploads
+ls -la /var/www/infersio-uploads/client-logos/
 ```
 
 ## First-time setup

@@ -8,7 +8,7 @@ set -euo pipefail
 
 PROJECT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 WEB_ROOT="${WEB_ROOT:-$PROJECT_DIR}"
-EXTERNAL_UPLOADS="${UPLOADS_DIR:-/home/ubuntu/uploads}"
+EXTERNAL_UPLOADS="${UPLOADS_DIR:-/var/www/infersio-uploads}"
 WEB_USER="${WEB_USER:-www-data}"
 DEPLOY_USER="${SUDO_USER:-$(whoami)}"
 
@@ -53,6 +53,7 @@ migrate_into_external() {
 }
 
 for LEGACY in \
+    "/home/ubuntu/uploads" \
     "$WEB_ROOT/storage/uploads" \
     "/var/www/html/storage/uploads" \
     "$PROJECT_DIR/storage/uploads" \
@@ -130,6 +131,13 @@ if id "$WEB_USER" >/dev/null 2>&1; then
         echo "OK: $WEB_USER can write to $EXTERNAL_UPLOADS/client-logos"
     else
         echo "WARNING: sudo chown -R $DEPLOY_USER:$WEB_USER $EXTERNAL_UPLOADS && sudo chmod -R 2775 $EXTERNAL_UPLOADS"
+    fi
+    if [ -d "$WEB_ROOT/storage/uploads/client-logos" ] || [ -L "$WEB_ROOT/storage/uploads" ]; then
+        if run_root -u "$WEB_USER" test -w "$WEB_ROOT/storage/uploads/client-logos" 2>/dev/null; then
+            echo "OK: $WEB_USER can write via $WEB_ROOT/storage/uploads/client-logos"
+        else
+            echo "WARNING: $WEB_USER cannot write via web symlink — check symlink and permissions"
+        fi
     fi
 fi
 

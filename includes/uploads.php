@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 /**
- * Admin uploads — persisted in /home/ubuntu/uploads on production (outside git + rsync).
+ * Admin uploads — persisted outside the web root (e.g. /var/www/infersio-uploads).
  * storage/uploads/ in the project is a symlink to that folder.
  */
 
@@ -33,7 +33,11 @@ function uploads_persistent_dir(): string
         return $dir;
     }
 
-    foreach (["/home/ubuntu/uploads", dirname(uploads_project_root()) . DIRECTORY_SEPARATOR . "uploads"] as $candidate) {
+    foreach ([
+        "/var/www/infersio-uploads",
+        "/home/ubuntu/uploads",
+        dirname(uploads_project_root()) . DIRECTORY_SEPARATOR . "uploads",
+    ] as $candidate) {
         if (is_dir($candidate)) {
             $resolved = realpath($candidate);
             $dir = $resolved !== false ? $resolved : $candidate;
@@ -61,6 +65,7 @@ function uploads_legacy_dir_candidates(): array
         uploads_storage_dir(),
         $root . DIRECTORY_SEPARATOR . "uploads",
         dirname($root) . DIRECTORY_SEPARATOR . "uploads",
+        "/var/www/infersio-uploads",
         "/home/ubuntu/uploads",
         "/var/www/uploads",
         "/var/www/html/storage/uploads",
@@ -165,6 +170,7 @@ function uploads_allowed_roots(): array
         uploads_storage_dir(),
         uploads_project_root() . DIRECTORY_SEPARATOR . "uploads",
         dirname(uploads_project_root()) . DIRECTORY_SEPARATOR . "uploads",
+        "/var/www/infersio-uploads",
         "/home/ubuntu/uploads",
         "/var/www/uploads",
         "/var/www/html/storage/uploads",
@@ -220,8 +226,7 @@ function uploads_ensure_subdir(string $subdir): array
         "ok" => false,
         "path" => $dir,
         "error" => "Upload folder is not writable: " . $dir
-            . ". On the server run: sudo chown -R ubuntu:www-data /home/ubuntu/uploads"
-            . " && sudo chmod -R 2775 /home/ubuntu/uploads",
+            . ". On the server run: sudo bash deploy/sync-to-web.sh",
     ];
 }
 

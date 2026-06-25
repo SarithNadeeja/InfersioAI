@@ -44,7 +44,7 @@ run_root rsync -av --delete \
 WEB_ROOT="$WEB_ROOT" bash "$REPO_DIR/deploy/ensure-external-uploads.sh"
 
 run_root chown -R "${DEPLOY_USER}:${WEB_USER}" "$WEB_ROOT"
-run_root chown -R "${DEPLOY_USER}:${WEB_USER}" "${UPLOADS_DIR:-/home/ubuntu/uploads}"
+run_root chown -R "${DEPLOY_USER}:${WEB_USER}" "${UPLOADS_DIR:-/var/www/infersio-uploads}"
 run_root systemctl restart apache2 2>/dev/null || true
 
-echo "Deploy complete. Uploaded images are in ${UPLOADS_DIR:-/home/ubuntu/uploads}"
+echo "Deploy complete. Uploaded images are in ${UPLOADS_DIR:-/var/www/infersio-uploads}"
