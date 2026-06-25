@@ -82,19 +82,22 @@ function uploads_configured_dir(): ?string
 function uploads_resolve_dir(string $dir): string
 {
     if (is_link($dir)) {
-        $target = realpath($dir);
-        if ($target !== false) {
-            return $target;
-        }
+        return $dir;
     }
 
     $resolved = realpath($dir);
     return $resolved !== false ? $resolved : $dir;
 }
 
+/** True when writes must stay on the project storage path (symlink / open_basedir). */
+function uploads_use_storage_path_for_writes(): bool
+{
+    $storage = uploads_storage_dir();
+    return is_link($storage) || is_dir($storage);
+}
+
 function uploads_dir_is_writable(string $dir): bool
 {
-    $dir = uploads_resolve_dir($dir);
     if (!is_dir($dir)) {
         return false;
     }
@@ -115,22 +118,23 @@ function uploads_dir_is_writable(string $dir): bool
 
 function uploads_can_write_to_dir(string $dir): bool
 {
-    $resolved = uploads_resolve_dir($dir);
-
-    if (!is_dir($resolved)) {
-        if (!@mkdir($resolved, 0775, true) && !is_dir($resolved)) {
+    if (!is_dir($dir)) {
+        if (!@mkdir($dir, 0775, true) && !is_dir($dir)) {
             return false;
         }
     }
 
-    if (!uploads_dir_is_writable($resolved)) {
-        @chmod($resolved, 2775);
+    if (!uploads_dir_is_writable($dir)) {
+        @chmod($dir, 2775);
     }
 
-    return uploads_dir_is_writable($resolved);
+    return uploads_dir_is_writable($dir);
 }
 
-/** Directory used for new uploads. */
+/**
+ * Directory used for move_uploaded_file — never resolved through symlinks
+ * (PHP open_basedir blocks writes to /home/ubuntu/... even when symlinked).
+ */
 function uploads_base_dir(): string
 {
     static $base = null;
@@ -138,9 +142,16 @@ function uploads_base_dir(): string
         return $base;
     }
 
+    if (uploads_use_storage_path_for_writes()) {
+        $base = uploads_storage_dir();
+        return $base;
+    }
+
     $persistent = uploads_persistent_dir();
-    uploads_can_write_to_dir($persistent);
-    $base = uploads_resolve_dir($persistent);
+    if (!is_dir($persistent)) {
+        @mkdir($persistent, 0775, true);
+    }
+    $base = $persistent;
 
     return $base;
 }
@@ -209,7 +220,8 @@ function uploads_ensure_subdir(string $subdir): array
         "ok" => false,
         "path" => $dir,
         "error" => "Upload folder is not writable: " . $dir
-            . ". Run on the server: bash deploy/ensure-external-uploads.sh",
+            . ". On the server run: sudo chown -R ubuntu:www-data /home/ubuntu/uploads"
+            . " && sudo chmod -R 2775 /home/ubuntu/uploads",
     ];
 }
 

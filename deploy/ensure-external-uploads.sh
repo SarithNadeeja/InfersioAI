@@ -49,7 +49,7 @@ migrate_into_external() {
     fi
 
     echo "Migrating uploads from $resolved ..."
-    run_root cp -an "$resolved/." "$EXTERNAL_UPLOADS/" 2>/dev/null || true
+    run_root cp -a --update=none "$resolved/." "$EXTERNAL_UPLOADS/" 2>/dev/null || true
 }
 
 for LEGACY in \
@@ -121,6 +121,7 @@ fi
 
 run_root chown -R "${DEPLOY_USER}:${WEB_USER}" "$EXTERNAL_UPLOADS"
 run_root chmod 2775 "$EXTERNAL_UPLOADS"
+run_root chmod 2775 "$EXTERNAL_UPLOADS/client-logos" "$EXTERNAL_UPLOADS/team-photos" 2>/dev/null || true
 run_root find "$EXTERNAL_UPLOADS" -type d -exec chmod 2775 {} + 2>/dev/null || true
 run_root find "$EXTERNAL_UPLOADS" -type f -exec chmod 664 {} + 2>/dev/null || true
 

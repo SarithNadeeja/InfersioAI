@@ -1,6 +1,8 @@
 # InfersioAI — Apache (e.g. AWS Lightsail / XAMPP)
 # Helps banner video stream correctly on production (MIME, ranges, no gzip on video).
 
+Options +FollowSymLinks
+
 <IfModule mod_rewrite.c>
     RewriteEngine On
     # Admin uploads live in storage/uploads/ (gitignored) — serve at /uploads/...
