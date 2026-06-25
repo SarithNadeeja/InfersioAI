@@ -169,31 +169,43 @@ function uploads_can_write_to_dir(string $dir): bool
     return uploads_dir_is_writable($dir);
 }
 
+function uploads_permission_fix_hint(): string
+{
+    return "SSH to the server and run: bash deploy/ensure-external-uploads.sh "
+        . "(fixes www-data write access to /home/ubuntu/uploads).";
+}
+
 /**
  * @return array{ok: bool, path: string, error: string}
  */
 function uploads_ensure_subdir(string $subdir): array
 {
-    $dir = uploads_base_dir() . DIRECTORY_SEPARATOR . trim(str_replace(["/", "\\"], DIRECTORY_SEPARATOR, $subdir), DIRECTORY_SEPARATOR);
+    $subdir = trim(str_replace(["/", "\\"], DIRECTORY_SEPARATOR, $subdir), DIRECTORY_SEPARATOR);
+    $candidates = array_values(array_unique([
+        uploads_base_dir(),
+        uploads_project_root() . DIRECTORY_SEPARATOR . "uploads",
+        uploads_configured_base_dir(),
+    ]));
 
-    if (!uploads_can_write_to_dir($dir)) {
-        $display = $dir;
-        $resolved = realpath(dirname($dir));
-        if ($resolved !== false) {
-            $display = $resolved . DIRECTORY_SEPARATOR . basename($dir);
+    foreach ($candidates as $base) {
+        $dir = $base . DIRECTORY_SEPARATOR . $subdir;
+        if (uploads_can_write_to_dir($dir)) {
+            return [
+                "ok" => true,
+                "path" => $dir,
+                "error" => "",
+            ];
         }
-
-        return [
-            "ok" => false,
-            "path" => $dir,
-            "error" => "Upload folder is not writable: " . $display,
-        ];
     }
 
+    $display = uploads_configured_base_dir() . DIRECTORY_SEPARATOR . $subdir;
+
     return [
-        "ok" => true,
-        "path" => $dir,
-        "error" => "",
+        "ok" => false,
+        "path" => $display,
+        "error" => "Upload folder is not writable: " . $display
+            . ". The web server (www-data) needs write access. "
+            . uploads_permission_fix_hint(),
     ];
 }
 

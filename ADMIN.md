@@ -119,11 +119,23 @@ The app also **auto-detects** a sibling `../uploads` folder when `uploads.local.
 4. Ensure the web server user (`www-data`) can write to `/home/ubuntu/uploads`:
 
 ```bash
-sudo chown -R ubuntu:www-data /home/ubuntu/uploads
-sudo chmod -R 775 /home/ubuntu/uploads
+cd /home/ubuntu/InfersioAI
+bash deploy/ensure-external-uploads.sh
+sudo systemctl restart apache2
 ```
 
-The deploy script runs these steps for you. If uploads still fail, the admin error will mention the folder path or permissions.
+If uploads still fail with **“Upload folder is not writable”**, run manually:
+
+```bash
+sudo usermod -aG ubuntu www-data
+sudo chown -R ubuntu:www-data /home/ubuntu/uploads
+sudo chmod 2775 /home/ubuntu/uploads
+sudo chmod -R 2775 /home/ubuntu/uploads/client-logos /home/ubuntu/uploads/team-photos
+sudo chmod 750 /home/ubuntu
+sudo systemctl restart apache2
+```
+
+`www-data` must be able to **traverse** `/home/ubuntu` and **write** inside `/home/ubuntu/uploads`.
 
 Images are served via `media.php?f=client-logos/…` and still work with the `uploads/` symlink.
 
