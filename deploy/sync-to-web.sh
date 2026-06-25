@@ -32,22 +32,35 @@ run_root() {
     fi
 }
 
-# Sync code only — never delete the live uploads folder.
+DB_LOCAL_BACKUP=""
+if [ -f "$WEB_ROOT/config/database.local.php" ]; then
+    DB_LOCAL_BACKUP="$(mktemp)"
+    cp "$WEB_ROOT/config/database.local.php" "$DB_LOCAL_BACKUP"
+fi
+
+# Sync code only — never delete live config or uploads.
 run_root rsync -av --delete \
     --exclude ".git/" \
     --exclude "storage/uploads/" \
     --exclude "config/uploads.local.php" \
+    --exclude "config/database.local.php" \
     "$REPO_DIR/" "$WEB_ROOT/"
 
 # Keep database credentials on the web root (not in git).
 if [ -f "$REPO_DIR/config/database.local.php" ]; then
     run_root cp "$REPO_DIR/config/database.local.php" "$WEB_ROOT/config/database.local.php"
+elif [ -n "$DB_LOCAL_BACKUP" ] && [ -f "$DB_LOCAL_BACKUP" ]; then
+    run_root cp "$DB_LOCAL_BACKUP" "$WEB_ROOT/config/database.local.php"
 elif [ ! -f "$WEB_ROOT/config/database.local.php" ]; then
     echo ""
     echo "WARNING: Missing $WEB_ROOT/config/database.local.php"
-    echo "Homepage cannot load clients without database credentials."
-    echo "Copy your DB config: cp config/database.local.php (create it from database.example.php)"
+    echo "Public pages cannot load clients or team members without database credentials."
+    echo "Create it from config/database.example.php on the server, then redeploy."
     echo ""
+fi
+
+if [ -n "$DB_LOCAL_BACKUP" ] && [ -f "$DB_LOCAL_BACKUP" ]; then
+    rm -f "$DB_LOCAL_BACKUP"
 fi
 
 # Restore persistent uploads + symlinks in repo and web root (needs sudo for /var/www/html).

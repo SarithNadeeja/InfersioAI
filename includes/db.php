@@ -70,7 +70,6 @@ function bootstrap_database(): void
     if ($done) {
         return;
     }
-    $done = true;
 
     $pdo = db();
 
@@ -140,6 +139,8 @@ function bootstrap_database(): void
 
     seed_admin_user_if_missing($pdo);
     admin_purge_stale_bootstrap_users($pdo);
+
+    $done = true;
 }
 
 /**
@@ -345,16 +346,28 @@ function team_members_for_display(?array $members = null): array
             continue;
         }
 
-        $image = trim((string) ($member["image_url"] ?? ""));
-        if ($image === "") {
+        $name = db_row_string($member, "name");
+        $role = db_row_string($member, "role");
+        $image = db_row_string($member, "image_url");
+        if ($name === "" || $image === "") {
             continue;
         }
 
         if (!preg_match('#^https?://#i', $image)) {
-            $member["image_url"] = uploads_public_src($image);
+            $image = uploads_public_src($image);
         }
 
-        $display[] = $member;
+        $profile = db_row_string($member, "profile_link");
+        if ($profile === "") {
+            $profile = "#";
+        }
+
+        $display[] = [
+            "name" => $name,
+            "role" => $role,
+            "image_url" => $image,
+            "profile_link" => $profile,
+        ];
     }
 
     return $display;
@@ -371,8 +384,18 @@ function public_team_members(): array
              FROM team_members
              ORDER BY sort_order ASC, id ASC"
         );
-        return $stmt->fetchAll();
+        if ($stmt === false) {
+            return [];
+        }
+
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        if (!is_array($rows)) {
+            return [];
+        }
+
+        return $rows;
     } catch (Throwable $e) {
+        error_log("public_team_members failed: " . $e->getMessage());
         return [];
     }
 }

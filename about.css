@@ -140,11 +140,6 @@ body.about-page {
     background: transparent;
 }
 
-.about-section--clients {
-    background: rgba(255, 255, 255, 0.02);
-    overflow: hidden;
-}
-
 .about-section--platforms {
     background: transparent;
 }

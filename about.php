@@ -4,7 +4,13 @@ declare(strict_types=1);
 require_once __DIR__ . "/includes/db.php";
 
 $navCurrent = "about";
-$teamMembers = team_members_for_display();
+
+$teamMembers = [];
+try {
+    $teamMembers = team_members_for_display(public_team_members());
+} catch (Throwable $e) {
+    error_log("about team load failed: " . $e->getMessage());
+}
 ?>
 <!DOCTYPE html>
 <html lang="en" class="about-page">
@@ -19,7 +25,6 @@ $teamMembers = team_members_for_display();
     <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600&family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet">
 
     <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="client-slideshow.css">
     <link rel="stylesheet" href="about.css">
 </head>
 <body id="page-top" class="about-page">
@@ -119,13 +124,6 @@ $teamMembers = team_members_for_display();
                     </div>
                 <?php endif; ?>
             </div>
-        </section>
-
-        <section class="about-section about-section--clients" aria-label="Our clients">
-            <?php
-            $variant = "dark";
-            require __DIR__ . "/includes/client-slideshow.php";
-            ?>
         </section>
 
         <section class="about-section about-section--cta" aria-labelledby="about-cta-heading">
