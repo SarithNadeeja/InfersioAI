@@ -47,7 +47,7 @@ function infersio_load_home_page_data(): array
     }
 
     try {
-        $data["leadership"] = team_members_for_display(public_team_members());
+        $data["leadership"] = public_team_members();
     } catch (Throwable $e) {
         error_log("home leadership load failed: " . $e->getMessage());
         $data["leadership"] = [];
@@ -260,7 +260,10 @@ if (function_exists("flush")) {
         require __DIR__ . "/includes/client-slideshow.php";
         ?>
 
-        <?php if ($homeLeadership): ?>
+        <?php
+        $homeLeadership = team_members_for_display($homeLeadership);
+        if ($homeLeadership):
+        ?>
         <section class="home-leadership" aria-labelledby="home-leadership-heading">
             <div class="home-leadership__inner">
                 <h2 id="home-leadership-heading" class="home-leadership__heading">Our leadership</h2>

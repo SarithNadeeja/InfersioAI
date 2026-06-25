@@ -138,7 +138,6 @@ function bootstrap_database(): void
     );
 
     seed_admin_user_if_missing($pdo);
-    admin_purge_stale_bootstrap_users($pdo);
 
     $done = true;
 }
@@ -346,28 +345,25 @@ function team_members_for_display(?array $members = null): array
             continue;
         }
 
-        $name = db_row_string($member, "name");
-        $role = db_row_string($member, "role");
         $image = db_row_string($member, "image_url");
-        if ($name === "" || $image === "") {
+        if ($image === "") {
             continue;
         }
 
+        $member["name"] = db_row_string($member, "name");
+        $member["role"] = db_row_string($member, "role");
+        $member["profile_link"] = db_row_string($member, "profile_link");
+        if ($member["profile_link"] === "") {
+            $member["profile_link"] = "#";
+        }
+
         if (!preg_match('#^https?://#i', $image)) {
-            $image = uploads_public_src($image);
+            $member["image_url"] = uploads_public_src($image);
+        } else {
+            $member["image_url"] = $image;
         }
 
-        $profile = db_row_string($member, "profile_link");
-        if ($profile === "") {
-            $profile = "#";
-        }
-
-        $display[] = [
-            "name" => $name,
-            "role" => $role,
-            "image_url" => $image,
-            "profile_link" => $profile,
-        ];
+        $display[] = $member;
     }
 
     return $display;

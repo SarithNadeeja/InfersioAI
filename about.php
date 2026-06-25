@@ -5,9 +5,9 @@ require_once __DIR__ . "/includes/db.php";
 
 $navCurrent = "about";
 
-$teamMembers = [];
+$rawTeam = [];
 try {
-    $teamMembers = team_members_for_display(public_team_members());
+    $rawTeam = public_team_members();
 } catch (Throwable $e) {
     error_log("about team load failed: " . $e->getMessage());
 }
@@ -90,7 +90,10 @@ try {
                     A team of developers, designers, and engineers dedicated to building innovative digital solutions.
                 </p>
 
-                <?php if (!$teamMembers): ?>
+                <?php
+                $teamMembers = team_members_for_display($rawTeam);
+                if (!$teamMembers):
+                ?>
                     <p class="about-team-empty about-reveal" style="--about-reveal-delay: 80ms">
                         Team profiles will appear here once added in the admin panel.
                     </p>
