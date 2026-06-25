@@ -10,7 +10,13 @@ declare(strict_types=1);
 require_once __DIR__ . "/db.php";
 
 $variant = $variant ?? "light";
-$clients = clients_for_display(isset($clients) && is_array($clients) ? $clients : null);
+
+$slideshowInput = null;
+if (isset($clients) && is_array($clients) && $clients !== []) {
+    $slideshowInput = $clients;
+}
+
+$clients = clients_for_display($slideshowInput);
 $hasClients = $clients !== [];
 
 if ($hasClients) {

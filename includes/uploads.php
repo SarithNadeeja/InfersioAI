@@ -113,19 +113,24 @@ function uploads_base_dir(): string
 function uploads_allowed_roots(): array
 {
     $roots = [];
-
-    foreach ([uploads_base_dir(), uploads_storage_dir()] as $candidate) {
-        $resolved = realpath($candidate);
-        if ($resolved !== false && is_dir($resolved) && !in_array($resolved, $roots, true)) {
-            $roots[] = $resolved;
-        }
-    }
+    $candidates = [
+        uploads_storage_dir(),
+        uploads_project_root() . DIRECTORY_SEPARATOR . "uploads",
+        dirname(uploads_project_root()) . DIRECTORY_SEPARATOR . "uploads",
+        "/home/ubuntu/uploads",
+        "/var/www/uploads",
+    ];
 
     $configured = uploads_configured_dir();
     if ($configured !== null) {
-        $resolved = realpath($configured);
-        if ($resolved !== false && is_dir($resolved) && !in_array($resolved, $roots, true)) {
-            $roots[] = $resolved;
+        $candidates[] = $configured;
+    }
+
+    foreach ($candidates as $candidate) {
+        $resolved = realpath($candidate);
+        $path = $resolved !== false ? $resolved : $candidate;
+        if (!in_array($path, $roots, true)) {
+            $roots[] = $path;
         }
     }
 
@@ -215,6 +220,24 @@ function uploads_store_relative_path(string $subdir, string $filename): string
     return "uploads/" . trim($subdir, "/\\") . "/" . ltrim($filename, "/\\");
 }
 
+function uploads_normalize_relative(string $storedPath): string
+{
+    $storedPath = trim(str_replace("\\", "/", $storedPath));
+    if ($storedPath === "") {
+        return "";
+    }
+
+    if (preg_match('#(?:^|/)client-logos/([^/?#]+)$#i', $storedPath, $matches)) {
+        return "client-logos/" . $matches[1];
+    }
+
+    if (preg_match('#(?:^|/)team-photos/([^/?#]+)$#i', $storedPath, $matches)) {
+        return "team-photos/" . $matches[1];
+    }
+
+    return uploads_relative_from_stored($storedPath);
+}
+
 function uploads_relative_from_stored(string $storedPath): string
 {
     return ltrim((string) preg_replace('#^uploads[/\\\\]#i', "", $storedPath), "/\\");
@@ -226,11 +249,20 @@ function uploads_resolve_fs_path(string $storedPath): ?string
         return null;
     }
 
-    $relative = uploads_relative_from_stored($storedPath);
+    $relative = uploads_normalize_relative($storedPath);
+    if ($relative === "") {
+        return null;
+    }
+
+    $relativeFs = str_replace(["/", "\\"], DIRECTORY_SEPARATOR, $relative);
     foreach (uploads_allowed_roots() as $root) {
-        $candidate = $root . DIRECTORY_SEPARATOR . str_replace(["/", "\\"], DIRECTORY_SEPARATOR, $relative);
-        $real = realpath($candidate);
-        if ($real !== false && is_file($real) && uploads_path_is_under_root($real, $root)) {
+        $candidate = $root . DIRECTORY_SEPARATOR . $relativeFs;
+        if (!is_file($candidate)) {
+            continue;
+        }
+
+        $real = realpath($candidate) ?: $candidate;
+        if (uploads_path_is_under_root($real, $root)) {
             return $real;
         }
     }
@@ -241,15 +273,22 @@ function uploads_resolve_fs_path(string $storedPath): ?string
 function uploads_path_is_under_root(string $absolutePath, string $root): bool
 {
     $real = realpath($absolutePath);
-    $base = realpath($root);
-    if ($real === false || $base === false) {
+    if ($real === false) {
         return false;
     }
-    if ($real === $base) {
-        return true;
+
+    $base = realpath($root);
+    if ($base !== false) {
+        if ($real === $base) {
+            return true;
+        }
+        return str_starts_with($real, $base . DIRECTORY_SEPARATOR);
     }
-    $prefix = $base . DIRECTORY_SEPARATOR;
-    return str_starts_with($real, $prefix);
+
+    $rootNorm = rtrim(str_replace("\\", "/", $root), "/");
+    $pathNorm = str_replace("\\", "/", $real);
+
+    return $pathNorm === $rootNorm || str_starts_with($pathNorm, $rootNorm . "/");
 }
 
 function uploads_delete_stored_file(string $storedPath): void
@@ -299,28 +338,19 @@ function uploads_public_src(string $storedPath, string $prefix = ""): string
         return $storedPath;
     }
 
-    $relative = uploads_relative_from_stored($storedPath);
-    $relativeUrl = str_replace("\\", "/", $relative);
-
-    if (uploads_resolve_fs_path($storedPath) !== null) {
-        $query = "media.php?f=" . rawurlencode($relativeUrl);
-        if ($prefix === "..") {
-            return "../" . $query;
-        }
-        if ($prefix !== "") {
-            return rtrim(str_replace("\\", "/", $prefix), "/") . "/" . $query;
-        }
-        $base = uploads_site_base();
-        return ($base !== "" ? $base . "/" : "/") . $query;
+    $relative = uploads_normalize_relative($storedPath);
+    if ($relative === "") {
+        $relative = ltrim(str_replace("\\", "/", $storedPath), "/");
     }
+    $relativeUrl = str_replace("\\", "/", $relative);
+    $query = "media.php?f=" . rawurlencode($relativeUrl);
 
-    $path = ltrim(str_replace("\\", "/", $storedPath), "/");
     if ($prefix === "..") {
-        return "../" . $path;
+        return "../" . $query;
     }
     if ($prefix !== "") {
-        return rtrim(str_replace("\\", "/", $prefix), "/") . "/" . $path;
+        return rtrim(str_replace("\\", "/", $prefix), "/") . "/" . $query;
     }
     $base = uploads_site_base();
-    return ($base !== "" ? $base . "/" : "") . $path;
+    return ($base !== "" ? $base . "/" : "/") . $query;
 }

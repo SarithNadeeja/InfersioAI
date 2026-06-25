@@ -258,14 +258,15 @@ function public_clients(): array
     try {
         bootstrap_database();
         $pdo = db();
-        $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
         $stmt = $pdo->query(
             "SELECT id, company_name, company_website, logo_path
              FROM clients
+             WHERE TRIM(logo_path) <> ''
              ORDER BY created_at DESC"
         );
-        return $stmt->fetchAll();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     } catch (Throwable $e) {
+        error_log("public_clients failed: " . $e->getMessage());
         return [];
     }
 }
@@ -284,12 +285,51 @@ function clients_for_display(?array $clients = null): array
         if (!is_array($client)) {
             continue;
         }
-        $logo = (string) ($client["logo_path"] ?? "");
+
+        $logo = trim((string) ($client["logo_path"] ?? ""));
         if ($logo === "") {
             continue;
         }
-        $client["logo_path"] = uploads_public_src($logo);
+
+        if (!preg_match('#^https?://#i', $logo) && !str_contains($logo, "media.php?f=")) {
+            $logo = uploads_public_src($logo);
+        }
+        if ($logo === "") {
+            continue;
+        }
+
+        $client["logo_path"] = $logo;
         $display[] = $client;
+    }
+
+    return $display;
+}
+
+/** @return list<array{name: string, role: string, image_url: string, profile_link: string}> */
+function team_members_for_display(?array $members = null): array
+{
+    require_once __DIR__ . "/uploads.php";
+
+    if ($members === null) {
+        $members = public_team_members();
+    }
+
+    $display = [];
+    foreach ($members as $member) {
+        if (!is_array($member)) {
+            continue;
+        }
+
+        $image = trim((string) ($member["image_url"] ?? ""));
+        if ($image === "") {
+            continue;
+        }
+
+        if (!preg_match('#^https?://#i', $image)) {
+            $member["image_url"] = uploads_public_src($image);
+        }
+
+        $display[] = $member;
     }
 
     return $display;

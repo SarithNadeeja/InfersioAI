@@ -14,32 +14,40 @@ $homeLeadership = [];
 
 /**
  * Load DB-backed sections after hero HTML so a slow remote DB does not delay banner video download.
+ *
+ * @return array{comments: list<array>, clients: list<array>, leadership: list<array>}
  */
-function infersio_load_home_page_data(): void
+function infersio_load_home_page_data(): array
 {
-    global $homeComments, $homeClients, $homeLeadership;
-
-    static $loaded = false;
-    if ($loaded) {
-        return;
+    static $data = null;
+    if ($data !== null) {
+        return $data;
     }
-    $loaded = true;
 
     require_once __DIR__ . "/includes/db.php";
     require_once __DIR__ . "/includes/comments.php";
 
+    $data = [
+        "comments" => [],
+        "clients" => [],
+        "leadership" => [],
+    ];
+
     try {
-        $homeComments = public_visitor_comments();
+        $data["comments"] = public_visitor_comments();
     } catch (Throwable $e) {
-        $homeComments = [];
+        $data["comments"] = [];
     }
+
     try {
-        $homeClients = public_clients();
-        $homeLeadership = public_team_members();
+        $data["clients"] = public_clients();
+        $data["leadership"] = team_members_for_display(public_team_members());
     } catch (Throwable $e) {
-        $homeClients = [];
-        $homeLeadership = [];
+        $data["clients"] = [];
+        $data["leadership"] = [];
     }
+
+    return $data;
 }
 
 ?>
@@ -138,7 +146,12 @@ if (function_exists("flush")) {
             <div class="hero-banner__shade" aria-hidden="true"></div>
         </section>
 
-        <?php infersio_load_home_page_data(); ?>
+        <?php
+        $homeData = infersio_load_home_page_data();
+        $homeComments = $homeData["comments"];
+        $homeClients = $homeData["clients"];
+        $homeLeadership = $homeData["leadership"];
+        ?>
 
         <section id="services" class="home-services" aria-hidden="true" aria-label="Our services">
             <div class="home-services__inner">
@@ -236,6 +249,7 @@ if (function_exists("flush")) {
         </section>
 
         <?php
+        $clients = $homeClients;
         $variant = "light";
         require __DIR__ . "/includes/client-slideshow.php";
         ?>

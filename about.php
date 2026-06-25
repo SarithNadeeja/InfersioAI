@@ -4,7 +4,7 @@ declare(strict_types=1);
 require_once __DIR__ . "/includes/db.php";
 
 $navCurrent = "about";
-$teamMembers = public_team_members();
+$teamMembers = team_members_for_display();
 ?>
 <!DOCTYPE html>
 <html lang="en" class="about-page">
