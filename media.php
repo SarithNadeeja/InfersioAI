@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 /**
  * Serves uploaded images from the configured uploads directory (including external paths).
- * URL: media.php?f=client-logos/filename.webp
+ * URL: /media.php?f=client-logos/filename.webp
  */
 
 require_once __DIR__ . "/includes/uploads.php";
@@ -20,7 +20,7 @@ if ($relative === "" || str_contains($relative, "..")) {
 $stored = "uploads/" . $relative;
 $absolute = uploads_resolve_fs_path($stored);
 
-if ($absolute === null || !is_readable($absolute)) {
+if ($absolute === null) {
     http_response_code(404);
     exit;
 }

@@ -313,6 +313,9 @@ function clients_for_display(?array $clients = null): array
         $client["company_name"] = db_row_string($client, "company_name");
         $client["company_website"] = db_row_string($client, "company_website");
         $client["logo_path"] = uploads_public_src($logo);
+        if ($client["logo_path"] === "") {
+            continue;
+        }
         $display[] = $client;
     }
 

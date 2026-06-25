@@ -300,27 +300,43 @@ function uploads_relative_from_stored(string $storedPath): string
     return ltrim((string) preg_replace('#^uploads[/\\\\]#i', "", $storedPath), "/\\");
 }
 
-function uploads_resolve_fs_path(string $storedPath): ?string
+function uploads_resolve_read_paths(string $storedPath): array
 {
     if ($storedPath === "" || preg_match('#^https?://#i', $storedPath)) {
-        return null;
+        return [];
     }
 
     $relative = uploads_normalize_relative($storedPath);
     if ($relative === "") {
-        return null;
+        return [];
     }
 
     $relativeFs = str_replace(["/", "\\"], DIRECTORY_SEPARATOR, $relative);
-    foreach (uploads_allowed_roots() as $root) {
-        $candidate = $root . DIRECTORY_SEPARATOR . $relativeFs;
-        if (!is_file($candidate)) {
-            continue;
-        }
+    $paths = [];
+    $seen = [];
 
-        $real = realpath($candidate) ?: $candidate;
-        if (uploads_path_is_under_root($real, $root)) {
-            return $real;
+    $add = static function (string $path) use (&$paths, &$seen): void {
+        if ($path === "" || isset($seen[$path])) {
+            return;
+        }
+        $seen[$path] = true;
+        $paths[] = $path;
+    };
+
+    $add(uploads_storage_dir() . DIRECTORY_SEPARATOR . $relativeFs);
+
+    foreach (uploads_allowed_roots() as $root) {
+        $add($root . DIRECTORY_SEPARATOR . $relativeFs);
+    }
+
+    return $paths;
+}
+
+function uploads_resolve_fs_path(string $storedPath): ?string
+{
+    foreach (uploads_resolve_read_paths($storedPath) as $candidate) {
+        if (is_file($candidate) && is_readable($candidate)) {
+            return $candidate;
         }
     }
 
@@ -433,10 +449,5 @@ function uploads_public_src(string $storedPath, string $prefix = ""): string
         return rtrim(str_replace("\\", "/", $prefix), "/") . "/" . $query;
     }
 
-    $base = uploads_web_base();
-    if ($base === "") {
-        return $query;
-    }
-
-    return $base . "/" . $query;
+    return "/" . $query;
 }
