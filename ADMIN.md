@@ -101,9 +101,22 @@ sudo chown -R www-data:www-data /var/www/html /home/ubuntu/uploads
 sudo systemctl restart apache2
 ```
 
-### Local XAMPP
+### One-time fix (if symlink setup failed with "Permission denied")
 
-Without `config/uploads.local.php`, files go to `InfersioAI/storage/uploads/` (default).
+```bash
+cd /home/ubuntu/InfersioAI
+git pull
+sudo bash deploy/ensure-external-uploads.sh
+# or full deploy:
+sudo bash deploy/sync-to-web.sh
+```
+
+Verify:
+
+```bash
+ls -la /var/www/html/storage/uploads    # must show: uploads -> /home/ubuntu/uploads
+ls -la /home/ubuntu/uploads/client-logos/
+```
 
 ## First-time setup
 

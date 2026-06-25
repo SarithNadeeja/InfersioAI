@@ -22,11 +22,16 @@ run_root() {
     elif command -v sudo >/dev/null 2>&1; then
         sudo "$@"
     else
-        "$@" 2>/dev/null || true
+        "$@"
     fi
 }
 
-mkdir -p "$EXTERNAL_UPLOADS/client-logos" "$EXTERNAL_UPLOADS/team-photos"
+external_realpath() {
+    mkdir -p "$EXTERNAL_UPLOADS"
+    readlink -f "$EXTERNAL_UPLOADS" 2>/dev/null || echo "$EXTERNAL_UPLOADS"
+}
+
+run_root mkdir -p "$EXTERNAL_UPLOADS/client-logos" "$EXTERNAL_UPLOADS/team-photos"
 
 migrate_into_external() {
     local source="$1"
@@ -39,20 +44,20 @@ migrate_into_external() {
     if [ -z "$resolved" ] || [ ! -d "$resolved" ]; then
         return 0
     fi
-    if [ "$resolved" = "$(readlink -f "$EXTERNAL_UPLOADS" 2>/dev/null || echo "$EXTERNAL_UPLOADS")" ]; then
+    if [ "$resolved" = "$(external_realpath)" ]; then
         return 0
     fi
 
     echo "Migrating uploads from $resolved ..."
-    cp -an "$resolved/." "$EXTERNAL_UPLOADS/" 2>/dev/null || true
+    run_root cp -an "$resolved/." "$EXTERNAL_UPLOADS/" 2>/dev/null || true
 }
 
 for LEGACY in \
-    "$PROJECT_DIR/storage/uploads" \
     "$WEB_ROOT/storage/uploads" \
-    "$PROJECT_DIR/uploads" \
+    "/var/www/html/storage/uploads" \
+    "$PROJECT_DIR/storage/uploads" \
     "$WEB_ROOT/uploads" \
-    "/var/www/html/storage/uploads"
+    "$PROJECT_DIR/uploads"
 do
     migrate_into_external "$LEGACY"
 done
@@ -61,13 +66,29 @@ link_storage_uploads() {
     local site_root="$1"
     local storage_dir="$site_root/storage"
     local link_path="$storage_dir/uploads"
+    local external_target
+    external_target="$(external_realpath)"
 
-    mkdir -p "$storage_dir"
-    if [ -e "$link_path" ] && [ ! -L "$link_path" ]; then
+    run_root mkdir -p "$storage_dir"
+
+    if [ -L "$link_path" ]; then
+        local current_target
+        current_target="$(readlink -f "$link_path" 2>/dev/null || true)"
+        if [ "$current_target" = "$external_target" ]; then
+            echo "Already linked: $link_path -> $EXTERNAL_UPLOADS"
+            return 0
+        fi
+        echo "Replacing symlink $link_path ..."
+        run_root rm -f "$link_path"
+    elif [ -d "$link_path" ]; then
+        echo "Replacing folder $link_path with symlink ..."
         migrate_into_external "$link_path"
-        rm -rf "$link_path"
+        run_root rm -rf "$link_path"
+    elif [ -e "$link_path" ]; then
+        run_root rm -f "$link_path"
     fi
-    ln -sfn "$EXTERNAL_UPLOADS" "$link_path"
+
+    run_root ln -sfn "$EXTERNAL_UPLOADS" "$link_path"
     echo "Linked $link_path -> $EXTERNAL_UPLOADS"
 }
 
@@ -81,8 +102,8 @@ write_uploads_config() {
     local config_dir="$site_root/config"
     local config_file="$config_dir/uploads.local.php"
 
-    mkdir -p "$config_dir"
-    cat > "$config_file" <<PHP
+    run_root mkdir -p "$config_dir"
+    run_root tee "$config_file" >/dev/null <<PHP
 <?php
 declare(strict_types=1);
 

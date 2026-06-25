@@ -40,7 +40,7 @@ run_root rsync -av --delete \
     --exclude "config/database.local.php" \
     "$REPO_DIR/" "$WEB_ROOT/"
 
-# Restore persistent uploads + symlinks in repo and web root.
+# Restore persistent uploads + symlinks in repo and web root (needs sudo for /var/www/html).
 WEB_ROOT="$WEB_ROOT" bash "$REPO_DIR/deploy/ensure-external-uploads.sh"
 
 run_root chown -R "${DEPLOY_USER}:${WEB_USER}" "$WEB_ROOT"
