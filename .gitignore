@@ -1,4 +1,5 @@
 /storage/
 /uploads/
+uploads/
 /config/database.local.php
 /config/uploads.local.php

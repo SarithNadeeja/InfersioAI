@@ -66,7 +66,24 @@ Use `config/database.local.php` for local-only passwords.
 
 ## Uploads folder (admin images)
 
-Client logos and team photos are saved outside the website folder when configured.
+Client logos and team photos must live **outside** the git repository so `git pull` never deletes them.
+
+### Why images disappeared after git pull
+
+The repo used to track `uploads/client-logos/.gitkeep`. On pull, Git can replace your `uploads` symlink with an empty project folder, so the site stops seeing files in `/home/ubuntu/uploads`.
+
+**Fix on server (run once after pulling this update):**
+
+```bash
+cd /home/ubuntu/InfersioAI   # your website folder
+bash deploy/ensure-external-uploads.sh
+```
+
+That script:
+
+- Keeps files in `/home/ubuntu/uploads`
+- Replaces `uploads/` inside the project with a **symlink** to the external folder
+- Creates `config/uploads.local.php` if missing
 
 ### AWS Lightsail / Ubuntu (your setup)
 
@@ -77,7 +94,14 @@ mkdir -p /home/ubuntu/uploads/client-logos /home/ubuntu/uploads/team-photos
 chmod 775 /home/ubuntu/uploads
 ```
 
-2. Tell the app to use that path — create `config/uploads.local.php` (not in git):
+2. After **every** `git pull`, run:
+
+```bash
+cd /home/ubuntu/InfersioAI
+bash deploy/ensure-external-uploads.sh
+```
+
+3. Or create `config/uploads.local.php` manually (not in git):
 
 ```php
 <?php
@@ -90,21 +114,15 @@ return [
 
 Or set environment variable `UPLOADS_DIR=/home/ubuntu/uploads`.
 
-3. **Symlink** so the website can serve images at `/uploads/...` (optional if using `media.php`):
-
-```bash
-cd /home/ubuntu/InfersioAI   # or infersioai — match your deploy folder name
-rm -rf uploads               # only if uploads is empty or not needed
-ln -sfn /home/ubuntu/uploads uploads
-```
-
-Uploaded images are also served through `media.php?f=client-logos/…` when files live in `base_dir`, so the symlink is optional but recommended for direct `/uploads/` URLs.
+The app also **auto-detects** a sibling `../uploads` folder when `uploads.local.php` is absent.
 
 4. Ensure the web server user (`www-data`) can write to `/home/ubuntu/uploads`:
 
 ```bash
 sudo chown -R www-data:www-data /home/ubuntu/uploads
 ```
+
+Images are served via `media.php?f=client-logos/…` and still work with the `uploads/` symlink.
 
 ### Local XAMPP
 

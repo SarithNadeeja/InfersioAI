@@ -2,9 +2,53 @@
 declare(strict_types=1);
 
 /**
- * Admin uploads — filesystem path is configurable (e.g. /home/ubuntu/uploads).
- * URLs stay as uploads/client-logos/… — symlink website/uploads → base_dir on the server.
+ * Admin uploads — stored OUTSIDE the git repo on production when possible.
+ * Default server path: sibling folder ../uploads (e.g. /home/ubuntu/uploads).
  */
+
+function uploads_project_root(): string
+{
+    return dirname(__DIR__);
+}
+
+/** @return list<string> */
+function uploads_external_dir_candidates(): array
+{
+    $root = uploads_project_root();
+    $parent = dirname($root);
+
+    return array_values(array_unique([
+        $parent . DIRECTORY_SEPARATOR . "uploads",
+        "/home/ubuntu/uploads",
+        "/var/www/uploads",
+    ]));
+}
+
+function uploads_detect_external_base_dir(): ?string
+{
+    foreach (uploads_external_dir_candidates() as $candidate) {
+        $resolved = realpath($candidate);
+        if ($resolved !== false && is_dir($resolved) && is_readable($resolved)) {
+            return $resolved;
+        }
+    }
+
+    return null;
+}
+
+/** @return list<string> */
+function uploads_external_roots(): array
+{
+    $roots = [];
+    foreach (uploads_external_dir_candidates() as $candidate) {
+        $resolved = realpath($candidate);
+        if ($resolved !== false && is_dir($resolved)) {
+            $roots[] = $resolved;
+        }
+    }
+
+    return $roots;
+}
 
 function uploads_config(): array
 {
@@ -14,7 +58,7 @@ function uploads_config(): array
     }
 
     $defaults = [
-        "base_dir" => dirname(__DIR__) . DIRECTORY_SEPARATOR . "uploads",
+        "base_dir" => uploads_project_root() . DIRECTORY_SEPARATOR . "uploads",
     ];
 
     $localFile = __DIR__ . "/../config/uploads.local.php";
@@ -28,6 +72,11 @@ function uploads_config(): array
     $envDir = getenv("UPLOADS_DIR");
     if ($envDir !== false && $envDir !== "") {
         $defaults["base_dir"] = $envDir;
+    } elseif (!is_file($localFile)) {
+        $external = uploads_detect_external_base_dir();
+        if ($external !== null) {
+            $defaults["base_dir"] = $external;
+        }
     }
 
     $defaults["base_dir"] = rtrim(str_replace(["/", "\\"], DIRECTORY_SEPARATOR, (string) $defaults["base_dir"]), DIRECTORY_SEPARATOR);
@@ -45,10 +94,18 @@ function uploads_base_dir(): string
 function uploads_allowed_roots(): array
 {
     $roots = [uploads_base_dir()];
-    $legacy = realpath(dirname(__DIR__) . DIRECTORY_SEPARATOR . "uploads");
+
+    foreach (uploads_external_roots() as $external) {
+        if (!in_array($external, $roots, true)) {
+            $roots[] = $external;
+        }
+    }
+
+    $legacy = realpath(uploads_project_root() . DIRECTORY_SEPARATOR . "uploads");
     if ($legacy !== false && !in_array($legacy, $roots, true)) {
         $roots[] = $legacy;
     }
+
     return $roots;
 }
 
@@ -117,7 +174,6 @@ function uploads_delete_stored_file(string $storedPath): void
     }
 }
 
-/** Public URL path for &lt;img src&gt; (website root or admin ../ prefix). */
 function uploads_site_base(string $prefix = ""): string
 {
     if ($prefix === "..") {
@@ -142,7 +198,6 @@ function uploads_site_base(string $prefix = ""): string
     return $base;
 }
 
-/** Public URL path for &lt;img src&gt; (website root or admin ../ prefix). */
 function uploads_public_src(string $storedPath, string $prefix = ""): string
 {
     if ($storedPath === "") {
