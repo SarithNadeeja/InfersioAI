@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . "/../includes/admin_auth.php";
 require_once __DIR__ . "/../includes/admin_layout.php";
+require_once __DIR__ . "/../includes/uploads.php";
 
 $user = admin_require_login();
 if (!empty($user["must_change_password"])) {
@@ -13,10 +14,7 @@ if (!empty($user["must_change_password"])) {
 bootstrap_database();
 $pdo = db();
 
-$uploadsDir = __DIR__ . "/../uploads/client-logos";
-if (!is_dir($uploadsDir)) {
-    mkdir($uploadsDir, 0777, true);
-}
+$uploadsDir = uploads_ensure_subdir("client-logos");
 
 $error = "";
 $ok = "";
@@ -34,10 +32,7 @@ if (isset($_GET["delete"])) {
         $del->execute(["id" => $deleteId]);
 
         if ($row && !empty($row["logo_path"])) {
-            $abs = realpath(__DIR__ . "/../" . ltrim($row["logo_path"], "/\\"));
-            if ($abs && strpos($abs, realpath($uploadsDir)) === 0 && is_file($abs)) {
-                @unlink($abs);
-            }
+            uploads_delete_stored_file((string) $row["logo_path"]);
         }
         header("Location: clients.php?ok=deleted");
         exit;
@@ -78,7 +73,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                     if (!move_uploaded_file($tmp, $target)) {
                         $error = "Failed to save uploaded logo.";
                     } else {
-                        $logoPath = "uploads/client-logos/" . $name;
+                        $logoPath = uploads_store_relative_path("client-logos", $name);
                     }
                 }
             }
@@ -104,10 +99,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                     ]);
 
                     if ($old && !empty($old["logo_path"])) {
-                        $oldAbs = realpath(__DIR__ . "/../" . ltrim($old["logo_path"], "/\\"));
-                        if ($oldAbs && strpos($oldAbs, realpath($uploadsDir)) === 0 && is_file($oldAbs)) {
-                            @unlink($oldAbs);
-                        }
+                        uploads_delete_stored_file((string) $old["logo_path"]);
                     }
                 } else {
                     $upd = $pdo->prepare(
@@ -207,7 +199,7 @@ admin_page_header("Clients", "Add client name, logo, and website — shown on th
                         <?php else: ?>
                             <?php foreach ($clients as $c): ?>
                                 <tr>
-                                    <td><img class="logo-thumb" src="../<?= htmlspecialchars($c["logo_path"]) ?>" alt="<?= htmlspecialchars($c["company_name"]) ?>"></td>
+                                    <td><img class="logo-thumb" src="<?= htmlspecialchars(uploads_public_src((string) $c["logo_path"], "..")) ?>" alt="<?= htmlspecialchars($c["company_name"]) ?>"></td>
                                     <td><?= htmlspecialchars($c["company_name"]) ?></td>
                                     <td>
                                         <a href="<?= htmlspecialchars($c["company_website"]) ?>" target="_blank" rel="noopener noreferrer">

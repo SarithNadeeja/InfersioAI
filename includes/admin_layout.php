@@ -14,11 +14,6 @@ function admin_nav_items(): array
         ["key" => "comments", "label" => "Comments", "href" => "comments.php"],
         ["section" => true, "label" => "Administration"],
         ["key" => "users", "label" => "Users", "href" => "users.php"],
-        ["section" => true, "label" => "Service projects"],
-        ["key" => "projects-ai", "label" => "AI Solutions", "href" => "projects.php?service=ai-solutions"],
-        ["key" => "projects-web", "label" => "Web Solutions", "href" => "projects.php?service=web-solutions"],
-        ["key" => "projects-mobile", "label" => "Mobile Apps", "href" => "projects.php?service=mobile-applications"],
-        ["key" => "projects-software", "label" => "Software Dev", "href" => "projects.php?service=software-development"],
     ];
 }
 

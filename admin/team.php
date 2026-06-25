@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . "/../includes/admin_auth.php";
 require_once __DIR__ . "/../includes/admin_layout.php";
+require_once __DIR__ . "/../includes/uploads.php";
 
 $user = admin_require_login();
 if (!empty($user["must_change_password"])) {
@@ -13,10 +14,7 @@ if (!empty($user["must_change_password"])) {
 bootstrap_database();
 $pdo = db();
 
-$uploadsDir = __DIR__ . "/../uploads/team-photos";
-if (!is_dir($uploadsDir)) {
-    mkdir($uploadsDir, 0777, true);
-}
+$uploadsDir = uploads_ensure_subdir("team-photos");
 
 $error = "";
 $ok = "";
@@ -34,11 +32,7 @@ if (isset($_GET["delete"])) {
         $del->execute(["id" => $deleteId]);
 
         if ($row && !empty($row["image_url"]) && !preg_match('#^https?://#i', (string) $row["image_url"])) {
-            $abs = realpath(__DIR__ . "/../" . ltrim((string) $row["image_url"], "/\\"));
-            $base = realpath($uploadsDir);
-            if ($abs && $base && strpos($abs, $base) === 0 && is_file($abs)) {
-                @unlink($abs);
-            }
+            uploads_delete_stored_file((string) $row["image_url"]);
         }
         header("Location: team.php?ok=deleted");
         exit;
@@ -79,7 +73,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                     if (!move_uploaded_file($tmp, $target)) {
                         $error = "Failed to save uploaded photo.";
                     } else {
-                        $finalImage = "uploads/team-photos/" . $fname;
+                        $finalImage = uploads_store_relative_path("team-photos", $fname);
                     }
                 }
             }
@@ -107,11 +101,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                         "sort" => $sortOrder,
                     ]);
                     if ($old && !empty($old["image_url"]) && !preg_match('#^https?://#i', (string) $old["image_url"])) {
-                        $oldAbs = realpath(__DIR__ . "/../" . ltrim((string) $old["image_url"], "/\\"));
-                        $base = realpath($uploadsDir);
-                        if ($oldAbs && $base && strpos($oldAbs, $base) === 0 && is_file($oldAbs)) {
-                            @unlink($oldAbs);
-                        }
+                        uploads_delete_stored_file((string) $old["image_url"]);
                     }
                 } else {
                     $upd = $pdo->prepare(
@@ -223,7 +213,7 @@ admin_page_header("Leadership", "Add name, profession, and photo — shown on th
                                     <td>
                                         <?php
                                         $src = (string) $m["image_url"];
-                                        $imgSrc = preg_match('#^https?://#i', $src) ? $src : "../" . ltrim($src, "/");
+                                        $imgSrc = uploads_public_src($src, preg_match('#^https?://#i', $src) ? "" : "..");
                                         ?>
                                         <img class="logo-thumb" src="<?= htmlspecialchars($imgSrc) ?>" alt="">
                                     </td>

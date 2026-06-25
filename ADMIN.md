@@ -64,6 +64,48 @@ If the intro works on XAMPP but stalls on Lightsail, check these in order:
 
 Use `config/database.local.php` for local-only passwords.
 
+## Uploads folder (admin images)
+
+Client logos and team photos are saved outside the website folder when configured.
+
+### AWS Lightsail / Ubuntu (your setup)
+
+1. Create the shared uploads folder and subfolders:
+
+```bash
+mkdir -p /home/ubuntu/uploads/client-logos /home/ubuntu/uploads/team-photos
+chmod 775 /home/ubuntu/uploads
+```
+
+2. Tell the app to use that path — create `config/uploads.local.php` (not in git):
+
+```php
+<?php
+declare(strict_types=1);
+
+return [
+    "base_dir" => "/home/ubuntu/uploads",
+];
+```
+
+Or set environment variable `UPLOADS_DIR=/home/ubuntu/uploads`.
+
+3. **Symlink** so the website can serve images at `/uploads/...` (run inside your website folder, e.g. `InfersioAI` or `infersioai`):
+
+```bash
+cd /home/ubuntu/InfersioAI   # or infersioai — match your deploy folder name
+rm -rf uploads               # only if uploads is empty or not needed
+ln -sfn /home/ubuntu/uploads uploads
+```
+
+4. Ensure the web server user (`www-data`) can write to `/home/ubuntu/uploads`.
+
+The database still stores paths like `uploads/client-logos/logo_….webp`; the symlink makes those URLs work in the browser.
+
+### Local XAMPP
+
+Without `config/uploads.local.php`, files go to `InfersioAI/uploads/` inside the project (default).
+
 ## First-time setup
 
 1. Start PostgreSQL (local) or finish Lightsail database setup.
@@ -84,7 +126,6 @@ You will be required to choose a new username and password before using the pane
 - **Leadership** — team for homepage / About
 - **Comments** — homepage testimonials
 - **Users** — add / remove admin users; change username and password
-- **Service projects** — AI, Web, Mobile, Software categories
 
 ## Enable pdo_pgsql (XAMPP)
 
