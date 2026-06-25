@@ -231,18 +231,6 @@ $navCurrent = "contact";
         </div>
     </footer>
 
-    <div id="ai-contact-robot-container" class="ai-page-robot" aria-hidden="true"></div>
-
     <script src="script.js"></script>
-
-    <script src="https://unpkg.com/three@0.126.0/build/three.min.js"></script>
-    <script src="https://unpkg.com/three@0.126.0/examples/js/loaders/GLTFLoader.js"></script>
-    <script src="https://unpkg.com/three@0.126.0/examples/js/controls/OrbitControls.js"></script>
-    <script>
-        window.ROBOT_CONTAINER_ID = "ai-contact-robot-container";
-        window.ROBOT_ASSISTANT_KEY = "contactPageRobotAssistant";
-        window.ROBOT_READY_EVENT = "ai-contact-robot-ready";
-    </script>
-    <script src="robot-viewer.js"></script>
 </body>
 </html>

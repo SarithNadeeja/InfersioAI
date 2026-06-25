@@ -264,35 +264,3 @@ body#page-top.contact-page {
         max-width: none;
     }
 }
-
-/* AI Robot for Desktop */
-#ai-contact-robot-container.ai-page-robot {
-    position: fixed;
-    right: clamp(-220px, -14vw, -72px);
-    bottom: max(-52px, -6vh);
-    z-index: 999;
-    width: min(520px, 72vw);
-    height: min(680px, 52vh);
-    pointer-events: none;
-}
-
-#ai-contact-robot-container.ai-page-robot canvas {
-    width: 100% !important;
-    height: 100% !important;
-    display: block;
-}
-
-@media (max-width: 640px) {
-    #ai-contact-robot-container.ai-page-robot {
-        right: clamp(-160px, -20vw, -48px);
-        bottom: max(-40px, -5vh);
-        width: min(340px, 78vw);
-        height: min(440px, 42vh);
-    }
-}
-
-@media (prefers-reduced-motion: reduce) {
-    #ai-contact-robot-container.ai-page-robot {
-        opacity: 0.85;
-    }
-}

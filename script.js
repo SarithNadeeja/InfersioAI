@@ -118,23 +118,6 @@ document.addEventListener("DOMContentLoaded", () => {
             form.reset();
         });
     }
-
-    const contactUsLinks = document.querySelectorAll('a.cta-btn[href="contact.php"]');
-    if (contactUsLinks.length) {
-        const assistant = () => window.robotAssistant;
-
-        contactUsLinks.forEach((link) => {
-            link.addEventListener("mouseenter", () => {
-                const a = assistant();
-                if (a && typeof a.sayYes === "function") a.sayYes();
-            });
-
-            link.addEventListener("mouseleave", () => {
-                const a = assistant();
-                if (a && typeof a.resumeBehavior === "function") a.resumeBehavior();
-            });
-        });
-    }
 });
 
 // --- Global Chatbot UI Injection & Logic ---
@@ -192,10 +175,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const chatInput = document.getElementById("chat-input");
     const sendBtn = document.getElementById("send-chat");
     const chatBody = document.getElementById("chat-body");
-    let activeRobotContainerId = null;
     let chatReturnFocusEl = null;
-
-    const originalPositions = new Map();
 
     function releaseChatFocus() {
         const active = document.activeElement;
@@ -268,118 +248,12 @@ document.addEventListener("DOMContentLoaded", () => {
     function closeChatPanel() {
         releaseChatFocus();
 
-        if (activeRobotContainerId) {
-            const container = document.getElementById(activeRobotContainerId);
-            if (container) {
-                const isAiPageRobotDesktop = container.classList.contains("ai-page-robot") && window.innerWidth > 980;
-                if (!isAiPageRobotDesktop && !isMobileChat()) {
-                    animateBotTransition(container, false);
-                }
-                if (isMobileChat()) {
-                    container.classList.remove("chatbot-mode");
-                }
-            }
-            activeRobotContainerId = null;
-        }
         chatPanel.classList.add("hidden");
         chatPanel.setAttribute("aria-hidden", "true");
         chatBackdrop.classList.add("hidden");
         chatBackdrop.setAttribute("aria-hidden", "true");
         document.body.classList.remove("chat-modal-open");
     }
-
-    function animateBotTransition(container, toChatbotMode) {
-        container.style.animation = "none";
-
-        const firstRect = container.getBoundingClientRect();
-
-        if (toChatbotMode) {
-            originalPositions.set(container, {
-                parent: container.parentNode,
-                nextSibling: container.nextSibling,
-            });
-            document.body.appendChild(container);
-            container.classList.add("chatbot-mode");
-        } else {
-            container.classList.remove("chatbot-mode");
-            if (originalPositions.has(container)) {
-                const pos = originalPositions.get(container);
-                if (pos.parent) {
-                    if (pos.nextSibling && pos.parent.contains(pos.nextSibling)) {
-                        pos.parent.insertBefore(container, pos.nextSibling);
-                    } else {
-                        pos.parent.appendChild(container);
-                    }
-                }
-            }
-        }
-
-        const lastRect = container.getBoundingClientRect();
-        const deltaX = firstRect.left - lastRect.left;
-        const deltaY = firstRect.top - lastRect.top;
-        const scaleX = firstRect.width / lastRect.width;
-        const scaleY = firstRect.height / lastRect.height;
-
-        container.style.transition = "none";
-        container.style.transformOrigin = "top left";
-        container.style.transform = `translate(${deltaX}px, ${deltaY}px) scale(${scaleX}, ${scaleY})`;
-        container.getBoundingClientRect();
-
-        container.style.transition = "transform 0.85s cubic-bezier(0.16, 1, 0.3, 1)";
-        container.style.transform = "translate(0, 0) scale(1, 1)";
-
-        container.addEventListener("transitionend", function cleanup(e) {
-            if (e.target === container && e.propertyName === "transform") {
-                container.style.transition = "";
-                container.style.transform = "";
-                container.style.transformOrigin = "";
-                container.style.animation = "";
-                container.removeEventListener("transitionend", cleanup);
-            }
-        });
-    }
-
-    window.addEventListener("robot-clicked", (e) => {
-        const containerId = e.detail && e.detail.containerId;
-        if (!containerId) return;
-
-        const container = document.getElementById(containerId);
-        if (!container) return;
-
-        if (activeRobotContainerId === containerId) {
-            if (chatPanel.classList.contains("hidden")) {
-                openChatPanel();
-            }
-            return;
-        }
-
-        if (activeRobotContainerId && activeRobotContainerId !== containerId) {
-            const oldContainer = document.getElementById(activeRobotContainerId);
-            if (oldContainer) {
-                const wasAiPageRobotDesktop = oldContainer.classList.contains("ai-page-robot") && window.innerWidth > 980;
-                if (!wasAiPageRobotDesktop && !isMobileChat()) {
-                    animateBotTransition(oldContainer, false);
-                }
-            }
-        }
-
-        activeRobotContainerId = containerId;
-
-        const isAiPageRobotDesktop = container.classList.contains("ai-page-robot") && window.innerWidth > 980;
-        const mobile = isMobileChat();
-
-        if (!isAiPageRobotDesktop && !mobile) {
-            chatPanel.classList.remove("chat-panel-inner");
-            animateBotTransition(container, true);
-            setTimeout(openChatPanel, 150);
-        } else if (isAiPageRobotDesktop) {
-            chatPanel.classList.add("chat-panel-inner");
-            openChatPanel();
-        } else {
-            chatPanel.classList.remove("chat-panel-inner");
-            openChatPanel();
-        }
-    });
 
     closeBtn.addEventListener("click", closeChatPanel);
 
@@ -395,19 +269,6 @@ document.addEventListener("DOMContentLoaded", () => {
         if (chatPanel.classList.contains("hidden")) return;
         if (chatPanel.contains(e.target)) return;
         if (chatBackdrop && chatBackdrop.contains(e.target)) return;
-
-        if (
-            e.target.closest(
-                ".ai-page-robot, .mobile-floating-bot, #global-mobile-robot, #robot-container, .robot-container, #service-robot-container, .chatbot-mode"
-            )
-        ) {
-            return;
-        }
-
-        if (activeRobotContainerId) {
-            const container = document.getElementById(activeRobotContainerId);
-            if (container && container.contains(e.target)) return;
-        }
 
         closeChatPanel();
     });
@@ -445,58 +306,5 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         });
     }
-
-    function initMobileFloatingBot() {
-        if (document.body.classList.contains("about-page")) {
-            return;
-        }
-
-        document.querySelectorAll(".mobile-floating-bot").forEach((el) => {
-            el.classList.remove("mobile-floating-bot");
-        });
-
-        if (window.innerWidth <= 980) {
-            const primary =
-                document.getElementById("robot-container") ||
-                document.querySelector(".ai-page-robot");
-            if (primary) {
-                primary.classList.add("mobile-floating-bot");
-            } else if (!document.getElementById("global-mobile-robot")) {
-                const globalBotHtml = `<div id="global-mobile-robot" class="mobile-floating-bot" aria-hidden="true"></div>`;
-                document.body.insertAdjacentHTML("beforeend", globalBotHtml);
-
-                if (typeof window.THREE === "undefined") {
-                    const threeScript = document.createElement("script");
-                    threeScript.src = "https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js";
-                    threeScript.onload = () => {
-                        const gltfScript = document.createElement("script");
-                        gltfScript.src = "https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js";
-                        gltfScript.onload = () => {
-                            window.ROBOT_CONTAINER_ID = "global-mobile-robot";
-                            const robotScript = document.createElement("script");
-                            robotScript.src = "robot-viewer.js";
-                            document.body.appendChild(robotScript);
-                        };
-                        document.body.appendChild(gltfScript);
-                    };
-                    document.body.appendChild(threeScript);
-                } else {
-                    window.ROBOT_CONTAINER_ID = "global-mobile-robot";
-                    const robotScript = document.createElement("script");
-                    robotScript.src = "robot-viewer.js";
-                    document.body.appendChild(robotScript);
-                }
-            }
-        } else {
-            const floating = document.querySelector(".mobile-floating-bot");
-            if (floating) {
-                floating.classList.remove("mobile-floating-bot");
-            }
-        }
-    }
-    initMobileFloatingBot();
-    window.addEventListener("resize", initMobileFloatingBot);
-    window.addEventListener("infersio-robot-mounted", initMobileFloatingBot);
-    window.addEventListener("load", initMobileFloatingBot);
 });
 
