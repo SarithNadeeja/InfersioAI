@@ -14,8 +14,6 @@ if (!empty($user["must_change_password"])) {
 bootstrap_database();
 $pdo = db();
 
-$uploadsDir = uploads_ensure_subdir("client-logos");
-
 $error = "";
 $ok = "";
 $editing = null;
@@ -69,11 +67,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                     $error = "Logo must be PNG, JPG, WEBP, or GIF.";
                 } else {
                     $name = "logo_" . time() . "_" . bin2hex(random_bytes(4)) . "." . $allowed[$mime];
-                    $target = $uploadsDir . "/" . $name;
-                    if (!move_uploaded_file($tmp, $target)) {
-                        $error = "Failed to save uploaded logo.";
+                    $saved = uploads_save_uploaded_file($tmp, "client-logos", $name);
+                    if (!$saved["ok"]) {
+                        $error = $saved["error"] !== "" ? $saved["error"] : "Failed to save uploaded logo.";
                     } else {
-                        $logoPath = uploads_store_relative_path("client-logos", $name);
+                        $logoPath = $saved["stored_path"];
                     }
                 }
             }

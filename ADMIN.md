@@ -119,8 +119,11 @@ The app also **auto-detects** a sibling `../uploads` folder when `uploads.local.
 4. Ensure the web server user (`www-data`) can write to `/home/ubuntu/uploads`:
 
 ```bash
-sudo chown -R www-data:www-data /home/ubuntu/uploads
+sudo chown -R ubuntu:www-data /home/ubuntu/uploads
+sudo chmod -R 775 /home/ubuntu/uploads
 ```
+
+The deploy script runs these steps for you. If uploads still fail, the admin error will mention the folder path or permissions.
 
 Images are served via `media.php?f=client-logos/…` and still work with the `uploads/` symlink.
 

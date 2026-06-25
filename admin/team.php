@@ -14,8 +14,6 @@ if (!empty($user["must_change_password"])) {
 bootstrap_database();
 $pdo = db();
 
-$uploadsDir = uploads_ensure_subdir("team-photos");
-
 $error = "";
 $ok = "";
 $editing = null;
@@ -69,11 +67,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                     $error = "Photo must be PNG, JPG, WEBP, or GIF.";
                 } else {
                     $fname = "team_" . time() . "_" . bin2hex(random_bytes(4)) . "." . $allowed[$mime];
-                    $target = $uploadsDir . "/" . $fname;
-                    if (!move_uploaded_file($tmp, $target)) {
-                        $error = "Failed to save uploaded photo.";
+                    $saved = uploads_save_uploaded_file($tmp, "team-photos", $fname);
+                    if (!$saved["ok"]) {
+                        $error = $saved["error"] !== "" ? $saved["error"] : "Failed to save uploaded photo.";
                     } else {
-                        $finalImage = uploads_store_relative_path("team-photos", $fname);
+                        $finalImage = $saved["stored_path"];
                     }
                 }
             }

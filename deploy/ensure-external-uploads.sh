@@ -11,7 +11,14 @@ echo "Project:  $PROJECT_DIR"
 echo "Uploads:  $EXTERNAL_UPLOADS"
 
 mkdir -p "$EXTERNAL_UPLOADS/client-logos" "$EXTERNAL_UPLOADS/team-photos"
-chmod 775 "$EXTERNAL_UPLOADS" 2>/dev/null || true
+chmod -R 775 "$EXTERNAL_UPLOADS" 2>/dev/null || true
+
+# Let PHP (www-data) write uploads while keeping ubuntu as owner.
+if id www-data >/dev/null 2>&1; then
+    sudo chown -R ubuntu:www-data "$EXTERNAL_UPLOADS" 2>/dev/null || chown -R "$(whoami):www-data" "$EXTERNAL_UPLOADS" 2>/dev/null || true
+else
+    chown -R "$(whoami):$(whoami)" "$EXTERNAL_UPLOADS" 2>/dev/null || true
+fi
 
 # If git recreated a real uploads/ folder, move files out then replace with symlink.
 if [ -e "$PROJECT_DIR/uploads" ] && [ ! -L "$PROJECT_DIR/uploads" ]; then

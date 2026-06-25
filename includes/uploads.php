@@ -24,11 +24,62 @@ function uploads_external_dir_candidates(): array
     ]));
 }
 
+function uploads_configured_base_dir(): string
+{
+    static $dir = null;
+    if ($dir !== null) {
+        return $dir;
+    }
+
+    $dir = uploads_project_root() . DIRECTORY_SEPARATOR . "uploads";
+
+    $localFile = __DIR__ . "/../config/uploads.local.php";
+    if (is_file($localFile)) {
+        $fromLocal = require $localFile;
+        if (is_array($fromLocal) && !empty($fromLocal["base_dir"])) {
+            $dir = (string) $fromLocal["base_dir"];
+        }
+    }
+
+    $envDir = getenv("UPLOADS_DIR");
+    if ($envDir !== false && $envDir !== "") {
+        $dir = $envDir;
+    } elseif (!is_file($localFile)) {
+        $external = uploads_detect_external_base_dir();
+        if ($external !== null) {
+            $dir = $external;
+        }
+    }
+
+    $dir = rtrim(str_replace(["/", "\\"], DIRECTORY_SEPARATOR, $dir), DIRECTORY_SEPARATOR);
+    return $dir;
+}
+
+function uploads_dir_is_writable(string $dir): bool
+{
+    if (!is_dir($dir)) {
+        return false;
+    }
+
+    if (!is_writable($dir)) {
+        return false;
+    }
+
+    $test = $dir . DIRECTORY_SEPARATOR . ".write_test_" . getmypid();
+    $written = @file_put_contents($test, "1");
+    if ($written === false) {
+        return false;
+    }
+    @unlink($test);
+
+    return true;
+}
+
 function uploads_detect_external_base_dir(): ?string
 {
     foreach (uploads_external_dir_candidates() as $candidate) {
         $resolved = realpath($candidate);
-        if ($resolved !== false && is_dir($resolved) && is_readable($resolved)) {
+        if ($resolved !== false && uploads_dir_is_writable($resolved)) {
             return $resolved;
         }
     }
@@ -36,68 +87,62 @@ function uploads_detect_external_base_dir(): ?string
     return null;
 }
 
-/** @return list<string> */
-function uploads_external_roots(): array
-{
-    $roots = [];
-    foreach (uploads_external_dir_candidates() as $candidate) {
-        $resolved = realpath($candidate);
-        if ($resolved !== false && is_dir($resolved)) {
-            $roots[] = $resolved;
-        }
-    }
-
-    return $roots;
-}
-
-function uploads_config(): array
-{
-    static $config = null;
-    if ($config !== null) {
-        return $config;
-    }
-
-    $defaults = [
-        "base_dir" => uploads_project_root() . DIRECTORY_SEPARATOR . "uploads",
-    ];
-
-    $localFile = __DIR__ . "/../config/uploads.local.php";
-    if (is_file($localFile)) {
-        $fromLocal = require $localFile;
-        if (is_array($fromLocal)) {
-            $defaults = array_merge($defaults, $fromLocal);
-        }
-    }
-
-    $envDir = getenv("UPLOADS_DIR");
-    if ($envDir !== false && $envDir !== "") {
-        $defaults["base_dir"] = $envDir;
-    } elseif (!is_file($localFile)) {
-        $external = uploads_detect_external_base_dir();
-        if ($external !== null) {
-            $defaults["base_dir"] = $external;
-        }
-    }
-
-    $defaults["base_dir"] = rtrim(str_replace(["/", "\\"], DIRECTORY_SEPARATOR, (string) $defaults["base_dir"]), DIRECTORY_SEPARATOR);
-    $config = $defaults;
-
-    return $config;
-}
-
+/**
+ * Path used for mkdir/move_uploaded_file. Prefers project/uploads when it is a
+ * symlink to the configured external folder so PHP open_basedir still allows writes.
+ */
 function uploads_base_dir(): string
 {
-    return uploads_config()["base_dir"];
+    static $base = null;
+    if ($base !== null) {
+        return $base;
+    }
+
+    $configured = uploads_configured_base_dir();
+    $projectUploads = uploads_project_root() . DIRECTORY_SEPARATOR . "uploads";
+    $configuredReal = realpath($configured);
+
+    if (is_link($projectUploads)) {
+        $linkTarget = realpath($projectUploads);
+        if ($linkTarget !== false && ($configuredReal === false || $linkTarget === $configuredReal)) {
+            $base = $projectUploads;
+            return $base;
+        }
+    }
+
+    if ($configuredReal !== false && uploads_path_is_under_root($configuredReal, uploads_project_root())) {
+        $base = $configuredReal;
+        return $base;
+    }
+
+    if (is_dir($projectUploads) && !is_link($projectUploads)) {
+        $projectReal = realpath($projectUploads);
+        if ($projectReal !== false && ($configuredReal === false || $projectReal === $configuredReal)) {
+            $base = $projectUploads;
+            return $base;
+        }
+    }
+
+    $base = $configured;
+    return $base;
 }
 
 /** @return list<string> */
 function uploads_allowed_roots(): array
 {
-    $roots = [uploads_base_dir()];
+    $roots = [];
+    foreach ([uploads_base_dir(), uploads_configured_base_dir()] as $candidate) {
+        $resolved = realpath($candidate);
+        $path = $resolved !== false ? $resolved : $candidate;
+        if (!in_array($path, $roots, true)) {
+            $roots[] = $path;
+        }
+    }
 
-    foreach (uploads_external_roots() as $external) {
-        if (!in_array($external, $roots, true)) {
-            $roots[] = $external;
+    foreach (uploads_external_dir_candidates() as $external) {
+        $resolved = realpath($external);
+        if ($resolved !== false && is_dir($resolved) && !in_array($resolved, $roots, true)) {
+            $roots[] = $resolved;
         }
     }
 
@@ -109,13 +154,92 @@ function uploads_allowed_roots(): array
     return $roots;
 }
 
-function uploads_ensure_subdir(string $subdir): string
+function uploads_can_write_to_dir(string $dir): bool
+{
+    if (!is_dir($dir)) {
+        if (!@mkdir($dir, 0775, true) && !is_dir($dir)) {
+            return false;
+        }
+    }
+
+    if (!uploads_dir_is_writable($dir)) {
+        @chmod($dir, 0775);
+    }
+
+    return uploads_dir_is_writable($dir);
+}
+
+/**
+ * @return array{ok: bool, path: string, error: string}
+ */
+function uploads_ensure_subdir(string $subdir): array
 {
     $dir = uploads_base_dir() . DIRECTORY_SEPARATOR . trim(str_replace(["/", "\\"], DIRECTORY_SEPARATOR, $subdir), DIRECTORY_SEPARATOR);
-    if (!is_dir($dir)) {
-        mkdir($dir, 0775, true);
+
+    if (!uploads_can_write_to_dir($dir)) {
+        $display = $dir;
+        $resolved = realpath(dirname($dir));
+        if ($resolved !== false) {
+            $display = $resolved . DIRECTORY_SEPARATOR . basename($dir);
+        }
+
+        return [
+            "ok" => false,
+            "path" => $dir,
+            "error" => "Upload folder is not writable: " . $display,
+        ];
     }
-    return $dir;
+
+    return [
+        "ok" => true,
+        "path" => $dir,
+        "error" => "",
+    ];
+}
+
+/**
+ * @return array{ok: bool, stored_path: string, error: string}
+ */
+function uploads_save_uploaded_file(string $tmpPath, string $subdir, string $filename): array
+{
+    $dirResult = uploads_ensure_subdir($subdir);
+    if (!$dirResult["ok"]) {
+        return [
+            "ok" => false,
+            "stored_path" => "",
+            "error" => $dirResult["error"],
+        ];
+    }
+
+    $target = $dirResult["path"] . DIRECTORY_SEPARATOR . ltrim($filename, "/\\");
+    if (!is_uploaded_file($tmpPath)) {
+        return [
+            "ok" => false,
+            "stored_path" => "",
+            "error" => "Invalid upload temp file.",
+        ];
+    }
+
+    if (!move_uploaded_file($tmpPath, $target)) {
+        $hint = "Check that the web server can write to the uploads folder.";
+        if (is_link(uploads_project_root() . DIRECTORY_SEPARATOR . "uploads")) {
+            $hint = "Run: bash deploy/ensure-external-uploads.sh and ensure www-data owns /home/ubuntu/uploads.";
+        }
+
+        return [
+            "ok" => false,
+            "stored_path" => "",
+            "error" => "Failed to save uploaded file. " . $hint,
+        ];
+    }
+
+    @chmod($target, 0664);
+
+    return [
+        "ok" => true,
+        "stored_path" => uploads_store_relative_path($subdir, $filename),
+        "error" => "",
+    ];
 }
 
 function uploads_store_relative_path(string $subdir, string $filename): string
