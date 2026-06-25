@@ -182,10 +182,12 @@ function uploads_allowed_roots(): array
     }
 
     foreach ($candidates as $candidate) {
+        if (!in_array($candidate, $roots, true)) {
+            $roots[] = $candidate;
+        }
         $resolved = realpath($candidate);
-        $path = $resolved !== false ? $resolved : $candidate;
-        if (!in_array($path, $roots, true)) {
-            $roots[] = $path;
+        if ($resolved !== false && !in_array($resolved, $roots, true)) {
+            $roots[] = $resolved;
         }
     }
 
@@ -340,6 +342,13 @@ function uploads_path_is_under_root(string $absolutePath, string $root): bool
         return str_starts_with($real, $base . DIRECTORY_SEPARATOR);
     }
 
+    if (is_link($root)) {
+        $linkTarget = realpath($root);
+        if ($linkTarget !== false) {
+            return uploads_path_is_under_root($real, $linkTarget);
+        }
+    }
+
     $rootNorm = rtrim(str_replace("\\", "/", $root), "/");
     $pathNorm = str_replace("\\", "/", $real);
 
@@ -412,22 +421,22 @@ function uploads_public_src(string $storedPath, string $prefix = ""): string
 
     $relative = uploads_normalize_relative($storedPath);
     if ($relative === "") {
-        $relative = ltrim(str_replace("\\", "/", $storedPath), "/");
+        $relative = ltrim(preg_replace('#^uploads/#i', "", str_replace("\\", "/", $storedPath)), "/");
     }
-    $relative = ltrim(preg_replace('#^uploads/#i', "", str_replace("\\", "/", $relative)), "/");
-    $webPath = "uploads/" . $relative;
+    $relativeUrl = str_replace("\\", "/", $relative);
+    $query = "media.php?f=" . rawurlencode($relativeUrl);
 
     if ($prefix === "..") {
-        return "../" . $webPath;
+        return "../" . $query;
     }
     if ($prefix !== "") {
-        return rtrim(str_replace("\\", "/", $prefix), "/") . "/" . $webPath;
+        return rtrim(str_replace("\\", "/", $prefix), "/") . "/" . $query;
     }
 
     $base = uploads_web_base();
     if ($base === "") {
-        return $webPath;
+        return $query;
     }
 
-    return $base . "/" . $webPath;
+    return $base . "/" . $query;
 }
