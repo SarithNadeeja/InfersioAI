@@ -118,6 +118,31 @@ function uploads_delete_stored_file(string $storedPath): void
 }
 
 /** Public URL path for &lt;img src&gt; (website root or admin ../ prefix). */
+function uploads_site_base(string $prefix = ""): string
+{
+    if ($prefix === "..") {
+        return "..";
+    }
+    if ($prefix !== "") {
+        return rtrim(str_replace("\\", "/", $prefix), "/");
+    }
+
+    static $base = null;
+    if ($base !== null) {
+        return $base;
+    }
+
+    $scriptDir = str_replace("\\", "/", dirname($_SERVER["SCRIPT_NAME"] ?? ""));
+    if ($scriptDir === "/" || $scriptDir === ".") {
+        $base = "";
+    } else {
+        $base = rtrim($scriptDir, "/");
+    }
+
+    return $base;
+}
+
+/** Public URL path for &lt;img src&gt; (website root or admin ../ prefix). */
 function uploads_public_src(string $storedPath, string $prefix = ""): string
 {
     if ($storedPath === "") {
@@ -126,9 +151,29 @@ function uploads_public_src(string $storedPath, string $prefix = ""): string
     if (preg_match('#^https?://#i', $storedPath)) {
         return $storedPath;
     }
-    $path = ltrim(str_replace("\\", "/", $storedPath), "/");
-    if ($prefix !== "") {
-        return rtrim($prefix, "/") . "/" . $path;
+
+    $relative = uploads_relative_from_stored($storedPath);
+    $relativeUrl = str_replace("\\", "/", $relative);
+
+    if (uploads_resolve_fs_path($storedPath) !== null) {
+        $query = "media.php?f=" . rawurlencode($relativeUrl);
+        if ($prefix === "..") {
+            return "../" . $query;
+        }
+        if ($prefix !== "") {
+            return rtrim(str_replace("\\", "/", $prefix), "/") . "/" . $query;
+        }
+        $base = uploads_site_base();
+        return ($base !== "" ? $base . "/" : "/") . $query;
     }
-    return $path;
+
+    $path = ltrim(str_replace("\\", "/", $storedPath), "/");
+    if ($prefix === "..") {
+        return "../" . $path;
+    }
+    if ($prefix !== "") {
+        return rtrim(str_replace("\\", "/", $prefix), "/") . "/" . $path;
+    }
+    $base = uploads_site_base();
+    return ($base !== "" ? $base . "/" : "") . $path;
 }

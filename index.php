@@ -11,21 +11,13 @@ $navCurrent = "home";
 $homeComments = [];
 $homeClients = [];
 $homeLeadership = [];
-$homeCounters = [
-    "ai-solutions" => 0,
-    "web-solutions" => 0,
-    "mobile-applications" => 0,
-    "software-development" => 0,
-    "clients" => 0,
-    "today_revenue" => 0.0,
-];
 
 /**
  * Load DB-backed sections after hero HTML so a slow remote DB does not delay banner video download.
  */
 function infersio_load_home_page_data(): void
 {
-    global $homeComments, $homeClients, $homeLeadership, $homeCounters;
+    global $homeComments, $homeClients, $homeLeadership;
 
     static $loaded = false;
     if ($loaded) {
@@ -33,20 +25,8 @@ function infersio_load_home_page_data(): void
     }
     $loaded = true;
 
+    require_once __DIR__ . "/includes/db.php";
     require_once __DIR__ . "/includes/comments.php";
-
-    try {
-        $homeCounters = public_home_counters();
-    } catch (Throwable $e) {
-        $homeCounters = [
-            "ai-solutions" => 0,
-            "web-solutions" => 0,
-            "mobile-applications" => 0,
-            "software-development" => 0,
-            "clients" => 0,
-            "today_revenue" => 0.0,
-        ];
-    }
 
     try {
         $homeComments = public_visitor_comments();
@@ -256,7 +236,6 @@ if (function_exists("flush")) {
         </section>
 
         <?php
-        $clients = $homeClients;
         $variant = "light";
         require __DIR__ . "/includes/client-slideshow.php";
         ?>

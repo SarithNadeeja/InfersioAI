@@ -90,7 +90,7 @@ return [
 
 Or set environment variable `UPLOADS_DIR=/home/ubuntu/uploads`.
 
-3. **Symlink** so the website can serve images at `/uploads/...` (run inside your website folder, e.g. `InfersioAI` or `infersioai`):
+3. **Symlink** so the website can serve images at `/uploads/...` (optional if using `media.php`):
 
 ```bash
 cd /home/ubuntu/InfersioAI   # or infersioai — match your deploy folder name
@@ -98,9 +98,13 @@ rm -rf uploads               # only if uploads is empty or not needed
 ln -sfn /home/ubuntu/uploads uploads
 ```
 
-4. Ensure the web server user (`www-data`) can write to `/home/ubuntu/uploads`.
+Uploaded images are also served through `media.php?f=client-logos/…` when files live in `base_dir`, so the symlink is optional but recommended for direct `/uploads/` URLs.
 
-The database still stores paths like `uploads/client-logos/logo_….webp`; the symlink makes those URLs work in the browser.
+4. Ensure the web server user (`www-data`) can write to `/home/ubuntu/uploads`:
+
+```bash
+sudo chown -R www-data:www-data /home/ubuntu/uploads
+```
 
 ### Local XAMPP
 

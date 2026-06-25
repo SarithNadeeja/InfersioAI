@@ -226,15 +226,28 @@ function public_home_counters(): array
                 $counters[$serviceType] = (int) $row["total"];
             }
         }
+    } catch (Throwable $e) {
+        // service_projects table may be absent — ignore
+    }
 
+    try {
+        bootstrap_database();
+        $pdo = db();
         $counters["clients"] = (int) $pdo->query("SELECT COUNT(*) FROM clients")->fetchColumn();
+    } catch (Throwable $e) {
+        // Keep homepage resilient if DB is unavailable.
+    }
+
+    try {
+        bootstrap_database();
+        $pdo = db();
         $counters["today_revenue"] = (float) $pdo->query(
             "SELECT COALESCE(SUM(project_value), 0)
              FROM service_projects
              WHERE DATE(created_at) = CURRENT_DATE"
         )->fetchColumn();
     } catch (Throwable $e) {
-        // Keep homepage resilient if DB is unavailable.
+        // service_projects table may be absent — ignore
     }
 
     return $counters;
@@ -245,6 +258,7 @@ function public_clients(): array
     try {
         bootstrap_database();
         $pdo = db();
+        $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
         $stmt = $pdo->query(
             "SELECT id, company_name, company_website, logo_path
              FROM clients
@@ -254,6 +268,31 @@ function public_clients(): array
     } catch (Throwable $e) {
         return [];
     }
+}
+
+/** @return list<array<string, mixed>> */
+function clients_for_display(?array $clients = null): array
+{
+    require_once __DIR__ . "/uploads.php";
+
+    if ($clients === null) {
+        $clients = public_clients();
+    }
+
+    $display = [];
+    foreach ($clients as $client) {
+        if (!is_array($client)) {
+            continue;
+        }
+        $logo = (string) ($client["logo_path"] ?? "");
+        if ($logo === "") {
+            continue;
+        }
+        $client["logo_path"] = uploads_public_src($logo);
+        $display[] = $client;
+    }
+
+    return $display;
 }
 
 /** @return list<array{name: string, role: string, image_url: string, profile_link: string}> */

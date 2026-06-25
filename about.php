@@ -4,7 +4,6 @@ declare(strict_types=1);
 require_once __DIR__ . "/includes/db.php";
 
 $navCurrent = "about";
-$clientLogos = public_clients();
 $teamMembers = public_team_members();
 ?>
 <!DOCTYPE html>
@@ -123,22 +122,10 @@ $teamMembers = public_team_members();
         </section>
 
         <section class="about-section about-section--clients" aria-label="Our clients">
-            <?php if (!$clientLogos): ?>
-                <div class="about-container">
-                    <div class="about-clients-head about-reveal">
-                        <h2 class="about-section-title">Trusted by Clients</h2>
-                    </div>
-                    <p class="about-client-empty about-reveal" style="--about-reveal-delay: 60ms">
-                        Client logos from the admin panel will appear here.
-                    </p>
-                </div>
-            <?php else: ?>
-                <?php
-                $clients = $clientLogos;
-                $variant = "dark";
-                require __DIR__ . "/includes/client-slideshow.php";
-                ?>
-            <?php endif; ?>
+            <?php
+            $variant = "dark";
+            require __DIR__ . "/includes/client-slideshow.php";
+            ?>
         </section>
 
         <section class="about-section about-section--cta" aria-labelledby="about-cta-heading">

@@ -4,11 +4,13 @@ declare(strict_types=1);
 /**
  * Infinite logo marquee — data from admin Clients panel.
  *
- * @var list<array{id: int|string, company_name: string, company_website: string, logo_path: string}> $clients
+ * @var list<array{id: int|string, company_name: string, company_website: string, logo_path: string}>|null $clients
  * @var string $variant 'light' | 'dark'
  */
-$clients = $clients ?? [];
+require_once __DIR__ . "/db.php";
+
 $variant = $variant ?? "light";
+$clients = clients_for_display(isset($clients) && is_array($clients) ? $clients : null);
 $hasClients = $clients !== [];
 
 if ($hasClients) {

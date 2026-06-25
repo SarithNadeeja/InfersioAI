@@ -204,14 +204,15 @@
 
         const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-        const formatValue = (value, format) => {
+        const formatValue = (value, format, suffix) => {
+            const rounded = Math.round(value).toLocaleString("en-US");
             if (format === "currency") {
                 return "$" + value.toLocaleString("en-US", {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2,
                 });
             }
-            return Math.round(value).toLocaleString("en-US");
+            return rounded + (suffix || "");
         };
 
         const runCounter = (item) => {
@@ -220,11 +221,12 @@
 
             const target = parseFloat(item.dataset.counterValue || "0");
             const format = item.dataset.counterFormat || "int";
+            const suffix = item.dataset.counterSuffix || "";
             item.dataset.counterAnimated = "true";
             item.classList.add("is-inview");
 
             if (prefersReducedMotion || !Number.isFinite(target)) {
-                display.textContent = formatValue(target, format);
+                display.textContent = formatValue(target, format, suffix);
                 return;
             }
 
@@ -235,15 +237,15 @@
                 const progress = Math.min(1, (now - start) / duration);
                 const eased = 1 - Math.pow(1 - progress, 3);
                 const current = target * eased;
-                display.textContent = formatValue(current, format);
+                display.textContent = formatValue(current, format, suffix);
                 if (progress < 1) {
                     requestAnimationFrame(tick);
                 } else {
-                    display.textContent = formatValue(target, format);
+                    display.textContent = formatValue(target, format, suffix);
                 }
             };
 
-            display.textContent = format === "currency" ? "$0.00" : "0";
+            display.textContent = "0" + suffix;
             requestAnimationFrame(tick);
         };
 
