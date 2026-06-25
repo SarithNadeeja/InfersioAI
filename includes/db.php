@@ -66,6 +66,12 @@ function db(): PDO
 
 function bootstrap_database(): void
 {
+    static $done = false;
+    if ($done) {
+        return;
+    }
+    $done = true;
+
     $pdo = db();
 
     $pdo->exec(
@@ -279,11 +285,16 @@ function public_clients(): array
              FROM clients
              ORDER BY created_at DESC"
         );
-        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        if ($stmt === false) {
+            return [];
+        }
 
-        return array_values(array_filter($rows, static function (array $row): bool {
-            return db_row_string($row, "logo_path") !== "";
-        }));
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        if (!is_array($rows)) {
+            return [];
+        }
+
+        return $rows;
     } catch (Throwable $e) {
         error_log("public_clients failed: " . $e->getMessage());
         return [];
@@ -313,9 +324,6 @@ function clients_for_display(?array $clients = null): array
         $client["company_name"] = db_row_string($client, "company_name");
         $client["company_website"] = db_row_string($client, "company_website");
         $client["logo_path"] = uploads_public_src($logo);
-        if ($client["logo_path"] === "") {
-            continue;
-        }
         $display[] = $client;
     }
 

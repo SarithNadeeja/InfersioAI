@@ -37,8 +37,18 @@ run_root rsync -av --delete \
     --exclude ".git/" \
     --exclude "storage/uploads/" \
     --exclude "config/uploads.local.php" \
-    --exclude "config/database.local.php" \
     "$REPO_DIR/" "$WEB_ROOT/"
+
+# Keep database credentials on the web root (not in git).
+if [ -f "$REPO_DIR/config/database.local.php" ]; then
+    run_root cp "$REPO_DIR/config/database.local.php" "$WEB_ROOT/config/database.local.php"
+elif [ ! -f "$WEB_ROOT/config/database.local.php" ]; then
+    echo ""
+    echo "WARNING: Missing $WEB_ROOT/config/database.local.php"
+    echo "Homepage cannot load clients without database credentials."
+    echo "Copy your DB config: cp config/database.local.php (create it from database.example.php)"
+    echo ""
+fi
 
 # Restore persistent uploads + symlinks in repo and web root (needs sudo for /var/www/html).
 WEB_ROOT="$WEB_ROOT" bash "$REPO_DIR/deploy/ensure-external-uploads.sh"

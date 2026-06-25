@@ -255,6 +255,7 @@ if (function_exists("flush")) {
         </section>
 
         <?php
+        $clients = clients_for_display($homeClients);
         $variant = "light";
         require __DIR__ . "/includes/client-slideshow.php";
         ?>

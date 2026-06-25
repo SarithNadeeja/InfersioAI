@@ -440,14 +440,14 @@ function uploads_public_src(string $storedPath, string $prefix = ""): string
         $relative = ltrim(preg_replace('#^uploads/#i', "", str_replace("\\", "/", $storedPath)), "/");
     }
     $relativeUrl = str_replace("\\", "/", $relative);
-    $query = "media.php?f=" . rawurlencode($relativeUrl);
+    $webPath = "storage/uploads/" . $relativeUrl;
 
     if ($prefix === "..") {
-        return "../" . $query;
+        return "../" . $webPath;
     }
     if ($prefix !== "") {
-        return rtrim(str_replace("\\", "/", $prefix), "/") . "/" . $query;
+        return rtrim(str_replace("\\", "/", $prefix), "/") . "/" . $webPath;
     }
 
-    return "/" . $query;
+    return "/" . $webPath;
 }

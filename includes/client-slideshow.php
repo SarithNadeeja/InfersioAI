@@ -9,7 +9,13 @@ declare(strict_types=1);
 require_once __DIR__ . "/db.php";
 
 $variant = $variant ?? "light";
-$clients = clients_for_display();
+
+if (!isset($clients) || !is_array($clients)) {
+    $clients = clients_for_display();
+} elseif ($clients !== [] && !str_contains((string) ($clients[0]["logo_path"] ?? ""), "storage/uploads/")) {
+    $clients = clients_for_display($clients);
+}
+
 $hasClients = $clients !== [];
 
 if ($hasClients) {
