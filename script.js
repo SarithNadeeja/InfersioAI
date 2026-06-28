@@ -291,7 +291,7 @@ document.addEventListener("DOMContentLoaded", () => {
         chatInput.value = "";
         chatBody.scrollTop = chatBody.scrollHeight;
         setTimeout(() => {
-            appendBotReply("Thanks for your message! Our team will follow up shortly. For urgent requests, email sales@infersioai.com.");
+            appendBotReply("Thanks for your message! Our team will follow up shortly. For urgent requests, email infersio.ai@gmail.com.");
         }, 600);
     }
 

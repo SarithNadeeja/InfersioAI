@@ -51,16 +51,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $headers = [
             'MIME-Version: 1.0',
             'Content-Type: text/plain; charset=UTF-8',
-            'From: InfersioAI <sales@infersioai.com>',
+            'From: InfersioAI <infersio.ai@gmail.com>',
             'Reply-To: ' . $email,
         ];
-        $to = 'sales@infersioai.com';
+        $to = 'infersio.ai@gmail.com';
         $sent = @mail($to, '=?UTF-8?B?' . base64_encode($subject) . '?=', $body, implode("\r\n", $headers));
         if ($sent) {
             header('Location: contact.php?sent=1', true, 303);
             exit;
         }
-        $flash = 'We could not send the message from this server. Please email us directly at sales@infersioai.com.';
+        $flash = 'We could not send the message from this server. Please email us directly at infersio.ai@gmail.com.';
         $flashType = 'error';
     }
 }
@@ -153,14 +153,14 @@ $navCurrent = "contact";
                             <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
                             <polyline points="22,6 12,13 2,6"/>
                         </svg>
-                        <a href="mailto:sales@infersioai.com">sales@infersioai.com</a>
+                        <a href="mailto:infersio.ai@gmail.com">infersio.ai@gmail.com</a>
                     </div>
                     <div class="contact-info-row">
                         <svg class="contact-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                             <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/>
                             <line x1="12" y1="18" x2="12.01" y2="18"/>
                         </svg>
-                        <span>+94 707 023 213</span>
+                        <span>+94788197114</span>
                     </div>
                 </div>
                 <div class="contact-info-block">
@@ -170,7 +170,7 @@ $navCurrent = "contact";
                             <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
                             <polyline points="22,6 12,13 2,6"/>
                         </svg>
-                        <a href="mailto:info@infersioai.com">info@infersioai.com</a>
+                        <a href="mailto:infersio.ai@gmail.com">infersio.ai@gmail.com</a>
                     </div>
                 </div>
             </aside>
@@ -222,9 +222,9 @@ $navCurrent = "contact";
                     <a class="footer-privacy" href="#privacy" onclick="return false;">Privacy Policy</a>
                 </div>
                 <div class="footer-bottom-right">
-                    <a class="footer-contact" href="mailto:sales@infersioai.com">sales@infersioai.com</a>
+                    <a class="footer-contact" href="mailto:infersio.ai@gmail.com">infersio.ai@gmail.com</a>
                     <span class="footer-dot">•</span>
-                    <span class="footer-contact">Phone: +94 707 023 213</span>
+                    <span class="footer-contact">Phone: +94788197114</span>
                     <a class="footer-backtop" href="#page-top" aria-label="Back to top">↑</a>
                 </div>
             </div>

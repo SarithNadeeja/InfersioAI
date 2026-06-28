@@ -138,7 +138,7 @@ try {
                     </p>
                     <div class="about-cta-actions">
                         <a class="about-btn-outline" href="contact.php">Contact Us</a>
-                        <a class="about-btn-outline" href="mailto:sales@infersioai.com?subject=Project%20Inquiry">Start a Project</a>
+                        <a class="about-btn-outline" href="mailto:infersio.ai@gmail.com?subject=Project%20Inquiry">Start a Project</a>
                     </div>
                 </div>
             </div>
@@ -209,9 +209,9 @@ try {
                     <a class="footer-privacy" href="#privacy" onclick="return false;">Privacy Policy</a>
                 </div>
                 <div class="footer-bottom-right">
-                    <a class="footer-contact" href="mailto:sales@infersioai.com">sales@infersioai.com</a>
+                    <a class="footer-contact" href="mailto:infersio.ai@gmail.com">infersio.ai@gmail.com</a>
                     <span class="footer-dot">•</span>
-                    <span class="footer-contact">Phone: +94 707 023 213</span>
+                    <span class="footer-contact">Phone: +94788197114</span>
                     <a class="footer-backtop" href="#page-top" aria-label="Back to top">↑</a>
                 </div>
             </div>
