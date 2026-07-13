@@ -73,7 +73,14 @@ $navCurrent = "contact";
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Contact Us — InfersioAI</title>
-    <meta name="description" content="Get in touch with InfersioAI. Questions, project inquiries, and support — we are here to help.">
+    <?php
+    require_once __DIR__ . "/includes/site-head-meta.php";
+    infersio_render_site_meta([
+        "title" => "Contact Us — InfersioAI",
+        "description" => "Get in touch with InfersioAI. Questions, project inquiries, and support — we are here to help.",
+        "path" => "/contact.php",
+    ]);
+    ?>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

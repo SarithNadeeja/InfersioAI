@@ -18,7 +18,14 @@ try {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>About Us — InfersioAI</title>
-    <meta name="description" content="InfersioAI builds intelligent digital solutions—AI, software engineering, web, and mobile. Meet our team and explore how we help businesses transform.">
+    <?php
+    require_once __DIR__ . "/includes/site-head-meta.php";
+    infersio_render_site_meta([
+        "title" => "About Us — InfersioAI",
+        "description" => "InfersioAI builds intelligent digital solutions—AI, software engineering, web, and mobile. Meet our team and explore how we help businesses transform.",
+        "path" => "/about.php",
+    ]);
+    ?>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
