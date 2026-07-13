@@ -49,9 +49,12 @@ function infersio_render_site_meta(array $options = []): void
     }
 
     $canonical = infersio_site_base_url() . $path;
+    $faviconIco = infersio_asset_url("favicon.ico");
+    $favicon48 = infersio_asset_url("assets/images/favicon-48.png");
+    $favicon192 = infersio_asset_url("assets/images/favicon-192.png");
+    $appleTouch = infersio_asset_url("assets/images/apple-touch-icon.png");
+    $manifestUrl = infersio_asset_url("site.webmanifest");
     $logoUrl = infersio_asset_url("assets/images/favicon-512.png");
-    $icon192 = infersio_asset_url("assets/images/favicon-192.png");
-    $icon512 = infersio_asset_url("assets/images/favicon-512.png");
     $ogImage = trim((string) ($options["image"] ?? ""));
     if ($ogImage === "") {
         $ogImage = $logoUrl;
@@ -72,11 +75,12 @@ function infersio_render_site_meta(array $options = []): void
     ?>
     <meta name="description" content="<?= htmlspecialchars($description, ENT_QUOTES, "UTF-8") ?>">
     <link rel="canonical" href="<?= htmlspecialchars($canonical, ENT_QUOTES, "UTF-8") ?>">
-    <link rel="icon" href="/favicon.ico" sizes="any">
-    <link rel="icon" type="image/png" sizes="48x48" href="/assets/images/favicon-48.png">
-    <link rel="icon" type="image/png" sizes="192x192" href="/assets/images/favicon-192.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="/assets/images/apple-touch-icon.png">
-    <link rel="manifest" href="/site.webmanifest">
+    <link rel="icon" type="image/png" sizes="48x48" href="<?= htmlspecialchars($favicon48, ENT_QUOTES, "UTF-8") ?>">
+    <link rel="icon" href="<?= htmlspecialchars($faviconIco, ENT_QUOTES, "UTF-8") ?>" sizes="any">
+    <link rel="shortcut icon" href="<?= htmlspecialchars($faviconIco, ENT_QUOTES, "UTF-8") ?>">
+    <link rel="icon" type="image/png" sizes="192x192" href="<?= htmlspecialchars($favicon192, ENT_QUOTES, "UTF-8") ?>">
+    <link rel="apple-touch-icon" sizes="180x180" href="<?= htmlspecialchars($appleTouch, ENT_QUOTES, "UTF-8") ?>">
+    <link rel="manifest" href="<?= htmlspecialchars($manifestUrl, ENT_QUOTES, "UTF-8") ?>">
     <meta name="theme-color" content="#05070d">
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="InfersioAI">

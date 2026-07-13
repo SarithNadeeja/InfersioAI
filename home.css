@@ -848,12 +848,8 @@ body.home-page--scrollable .home-services {
 }
 
 .home-why__inner {
-    width: min(1280px, 100%);
+    width: min(900px, 100%);
     margin: 0 auto;
-    display: grid;
-    grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
-    align-items: center;
-    gap: clamp(32px, 5vw, 64px);
 }
 
 .home-why__title {
@@ -878,44 +874,6 @@ body.home-page--scrollable .home-services {
     font-size: clamp(0.95rem, 1.5vw, 1.05rem);
     line-height: 1.7;
     color: rgba(255, 255, 255, 0.82);
-}
-
-.home-why__media {
-    width: 100%;
-    border-radius: clamp(14px, 2vw, 20px);
-    overflow: hidden;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    background: #0a0a0a;
-    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.45);
-}
-
-.home-why__video {
-    display: block;
-    width: 100%;
-    height: auto;
-    aspect-ratio: 16 / 10;
-    object-fit: cover;
-    vertical-align: middle;
-}
-
-@media (max-width: 900px) {
-    .home-why__inner {
-        grid-template-columns: 1fr;
-    }
-
-    .home-why__media {
-        order: 2;
-    }
-
-    .home-why__copy {
-        order: 1;
-    }
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .home-why__video {
-        object-fit: contain;
-    }
 }
 
 /* —— Clients slideshow (directly after Why Choose) —— */

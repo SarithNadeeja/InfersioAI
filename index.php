@@ -243,21 +243,6 @@ if (function_exists("flush")) {
                         </p>
                     </div>
                 </div>
-                <div class="home-why__media">
-                    <video
-                        class="home-why__video"
-                        autoplay
-                        muted
-                        loop
-                        playsinline
-                        webkit-playsinline
-                        preload="metadata"
-                        poster="assets/whychooseus.webp"
-                        aria-label="Why choose Infersio AI"
-                    >
-                        <source src="assets/whychooseus.webm" type="video/webm">
-                    </video>
-                </div>
             </div>
         </section>
 
